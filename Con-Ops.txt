@@ -1,0 +1,47 @@
+CFRS-767 Group Project Con-Ops
+++++++++++++++++++++++++++++++++++++++++++++
+First off, we need to decide the language we are going to use for this project. I personally vote Python 3. It makes way more sense than Python 2, is more clean, and is easier to troubleshoot (in my opinion). Second, I think when we divide the work we need to write the code in terms of functions. If every thing the script needs to do is written as a function, we can easily copy/paste each other's work into the main script and just call that person's function. As for the project itself, basically, the way I see it, we need two distinct scripts:
+
+	1. Job Manager
+	2. Worker
+
+I have been doing some research on the best communication medium and I think HTTP would probably be the easiest. The worker and job manager could send 	GET and POST messages to each other for orders and feedback. There is a module for python called http.server that can do this. If we pick a funky port (e.g. 24999) it should be easy to identify any systems with the worker service running on the network. 
+
+Each script has distinct things it needs to do. I have listed all the stuff i can think of below:
+
+1. Job Mananger
+	- Inputs - Config file
+		- something like /etc/job_manager/job_manager.config
+		- this file should have
+			- the TCP port to listen for workers
+	- Inputs - User
+		- Hash
+		- type of hash
+	- Auto-detect all the hosts on the subnet with the worker installed. 
+		- There is probably some sort of nmap type module for python that will scann the subnet for a specific open port which we will use to identify our worker running
+	- Take, from the user, the hash, and type of hash
+	- Return to the user the results of the dictonary attack
+	- Assign work to each worker (i.e. 1/n of the dictionary to use)
+		- Each worker will need to receive the following - 
+			- Hash
+			- Which fraction of the total dictionary to use (i.e. part 1 of 3 of the dictionary)
+			- Type of hash
+			- I've been thinking about this, and I think an HTTP POST message with all this information would be the easiest to use. 
+	- Listen for the workers to report back with results	
+		- Success or failure
+	- Stop the remaining workers if one should hit success
+	
+2. Worker
+	- Inputs - Job Manager
+		- Listen for communication from the job manager
+			- There is a module for python called http.server that can handle GET and POST requests
+	- Inputs - Config file (i.e. /etc/worker/worker.config)
+		- Location of the hashcat program
+		- Location of the dictionary file
+		- IP of the job manager
+		- tcp port to listen/send on (i.e. 24999)
+	- Start/stop/monitor the hashcat process
+		- only use its part of the dictionary 
+			- This is the part that brian wrote already 
+	- report back the results
+	- stop hashcat if the job manager sends a kill signal. 
