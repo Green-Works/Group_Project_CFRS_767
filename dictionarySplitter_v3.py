@@ -14,15 +14,15 @@ import sys
 import logging
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
-logging.disable(logging.CRITICAL)
+# logging.disable(logging.CRITICAL)
 
 nodes = 0
 passwordCounter = 0
-test = 'False'
+test = True
 logging.info(type(test))
 
 # Ensure the user enters an integer greater than 0 for the number of nodes
-while test == 'False':
+while test:
     try:
         nodes = (int(input("Enter the number of AWS instances that will be used (cannot be 0): ")))
         logging.debug("nodes is: " + str(nodes))
@@ -32,9 +32,9 @@ while test == 'False':
         continue
     else:
         if nodes > 0:
-            test = 'True'
+            test = False
 
-# Read through the password list and build an array of all the passwords
+# Read through the password list and count the number of passwords.
 # Right now the destination to the dictionary is hard coded, but can be changed
 # to accept user input
 try:
