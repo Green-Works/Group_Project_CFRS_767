@@ -40,6 +40,8 @@ import logging
 import netifaces
 import netaddr
 import socket
+import requests
+
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
 # logging.disable(logging.CRITICAL)
@@ -115,9 +117,18 @@ def send_work(WORKER_LIST, HASH, TYPE, PORT):
     TOTAL_WORKERS = len(WORKER_LIST)
     i = 1
     for x in WORKER_LIST:
-        print("http://%s:%s --- POST: hash: %s type: %s Portion: %s/%s" % (x, PORT, HASH, TYPE, i, TOTAL_WORKERS))
+        url = "http://" + str(x) + ":" + str(PORT)
+        start = url + "/start"
+        print(url)
+        print(start)
+        payload = {'hash': HASH, 'type': TYPE, 'wnum': i, 'totalw': TOTAL_WORKERS}
+        try:
+            r = requests.post(start, data=payload)
+            print(r.url)
+            print("http://%s:%s --- POST: hash: %s type: %s Portion: %s/%s" % (x, PORT, HASH, TYPE, i, TOTAL_WORKERS))
+        except requests.exceptions.RequestException:
+            print("encountered an error")
         i += 1
-
 
 # troubleshooting. modified this to use logging. no need to delete as it can be used later during debugging
 logging.debug("String is: %s" % ARGS.string)
