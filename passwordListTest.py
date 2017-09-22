@@ -16,9 +16,6 @@ file's name).  TODO:  If that is the same as the current number of workers, then
 script notifies the main program to go ahead and run, as the workers will already
 have the correct split password lists. If they are different then this script
 will tell the main program to run the dictionary splitter script again.
-
-TODO: Determine if this script needs to delete the old password lists if they
-exist, or if it should call another script or function to do this work.
 """
 
 import os
