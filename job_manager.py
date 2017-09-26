@@ -46,7 +46,8 @@ import sys
 import re
 
 #Set config variables
-DICTIONARY = "/home/mckelvey/Dictionary/dictionary.txt"
+#enter location of the dictionary file
+DICTIONARY = ""
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
 # logging.disable(logging.CRITICAL)
