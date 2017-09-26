@@ -42,12 +42,13 @@ import netaddr
 import socket
 import requests
 import time
+import os
 import sys
 import re
 
 #Set config variables
-#enter location of the dictionary file
-DICTIONARY = ""
+DICTIONARY = "/home/mckelvey/Dictionary/dictionary.txt"
+
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
 # logging.disable(logging.CRITICAL)
@@ -116,34 +117,40 @@ def worker_discover(PORT):
         logging.debug("Workers found: {}".format(WORKER_LIST))
     return(WORKER_LIST)
 
-#### this is where brian's dictionary remover/checker goes
-def removeOldDictionaries():
-    print("some stuff goes here")
+#dictionary remover/checker
+def removeOldDictionaries(DICTIONARY):
+    passwordLoc = os.path.dirname(DICTIONARY)
+    splitDictRegex = re.compile(r'\dof\d.txt')  # this is regex to detect the split dictionaries in the folder.  This will be used to determine which files to delete.
+    logging.info("Checking for old split dictionaries to delete...")
+    for file in os.listdir(passwordLoc):
+        if splitDictRegex.search(file):
+            # if a split dictionary is found, remove it
+            logging.info("an old dictionary was found: {}. Removing it".format(file))
+            os.remove(passwordLoc + file)
+        else:
+            logging.info("No old dictionaries to delete.")
 
 #This script takes a text file of passwords and divides it into separate documents based on user input.
-def dictionarySplitter(nodes, DICTIONARY):
+def dictionary_splitter(NODES, DICTIONARY):
     passwordCounter = 0
-    logging.debug("The worker count is : {} and the dictionary file is {}".format(nodes, DICTIONARY))
+    logging.debug("NODES: {}, DICTIONARY: {}".format(NODES, DICTIONARY))
     try:
         myfile = open(DICTIONARY, 'r', encoding="utf-8")
         # Count the number of passwords
         for line in myfile:
             passwordCounter += 1
         myfile.close()
+        print(passwordCounter)
     except FileNotFoundError:
-        msg = "Cannot find the dictionary. Exiting program."
-        print(msg)
-        logging.error(msg)
+        logging.error("Cannot find the dictionary. Exiting program.")
         exit(1)
-    logging.debug("passwordCounter is: " + str(passwordCounter))
-    countPerNode = int((passwordCounter / nodes))
-    logging.debug("countPerNode is: " + str(countPerNode))
 
-###### this section needs debugging. the dictionary is split, but placed in the wrong path #########
+    countPerNode = int((passwordCounter / NODES))
     myfile = open(DICTIONARY, 'r', encoding="utf-8")
-    for i in range(nodes):
-        # create a password sheet for each node
-        filename = "{0}of{1}.txt".format(i + 1, nodes)
+
+    for i in range(NODES):
+        # create a dictionary file for each worker
+        filename = os.path.dirname(DICTIONARY) + "/{0}of{1}.txt".format(i + 1, NODES)
         o = open(filename, "w", encoding="utf-8")
         logging.debug("Creating wordlist {}".format(filename))
 
@@ -151,39 +158,36 @@ def dictionarySplitter(nodes, DICTIONARY):
         for j in range(countPerNode):
             o.write(str(myfile.readline()))
         o.close()
-
-    # for the last password list write all remaining passwords from the original list
+    filename = os.path.dirname(DICTIONARY) + "/{}of{}.txt".format(NODES, NODES)
+    o = open(filename, "a", encoding="utf-8")
     for line in myfile:
-        o = open("{}of{}.txt".format(nodes, nodes), "a", encoding="utf-8")
+        print(str(line.strip()) + "\n")
         o.write(str(line.strip()) + "\n")
-
     o.close()
     myfile.close()
-    print("The program has completed. You should have {} newly created split password lists.".format(nodes))
 
-# this listens for responses from the workers and responds
-def worker_monitor(WORKER_LIST):
-    print("listen for response")
-    print("answer found/kill jobs")
-    return("ANSWER")
+###### function to check the number of split dictionaries needed and call brians functions or not
+def dictionary_check(WORKER_LIST, DICTIONARY):
+    NODES = len(WORKER_LIST)
+    PATH = os.path.dirname(DICTIONARY)
+    print("NODES is: {} and PATH is: {}".format(NODES, PATH))
 
 # This is the part of the script that sends a POST/GET message to the workers with the
 def send_work(WORKER_LIST, HASH, TYPE, PORT):
-    print("send work...")
+    logging.info("sending work...")
     TOTAL_WORKERS = len(WORKER_LIST)
     i = 1
     for x in WORKER_LIST:
         url = "http://" + str(x) + ":" + str(PORT)
         start = url + "/start"
-        print(url)
-        print(start)
+        logging.debug("sending work to {}".format(url))
         payload = {'hash': HASH, 'type': TYPE, 'wnum': i, 'totalw': TOTAL_WORKERS}
         try:
             r = requests.post(start, data=payload)
-            print(r.url)
-            print("http://{}:{} --- POST: hash: {} type: {} Portion: {}/{}".format(x, PORT, HASH, TYPE, i, TOTAL_WORKERS))
+            #logging.debug("POST command for worker: {}".format(r.url))
+            logging.info("http://{}:{} --- POST: hash: {} type: {} Portion: {}/{}".format(x, PORT, HASH, TYPE, i, TOTAL_WORKERS))
         except requests.exceptions.RequestException:
-            print("encountered an error")
+            logging.info("encountered an error")
         i += 1
 
 #This should send a 'stop' post to the workers and ensure they go down gracefully
@@ -193,12 +197,12 @@ def worker_stop(WORKER_LIST, PORT):
     for X in WORKER_LIST:
         url = "http://" + str(X) + ":" + str(PORT)
         stop = url + "/stop"
-        print("Stopping work on {}".format(url))
+        logging.info("Stopping work on {}".format(url))
         try:
             r = requests.post(stop, data=payload)
-            print(r.status_code)
+            logging.debug(r.status_code)
         except requests.exceptions.RequestException:
-            print("encountered an error stopping worker {}".format(url))
+            logging.info("encountered an error stopping worker {}".format(url))
 
 
 #This function checks the status of the workers
@@ -247,7 +251,9 @@ print("The workers found are {}".format(WORKER_LIST))
 THis is where a call to brian's dictionary divider goes
 Some logic needs to be added to determine when each these functions needs to be ran
 '''
-dictionarySplitter(len(WORKER_LIST), DICTIONARY)
+
+dictionary_splitter(len(WORKER_LIST), DICTIONARY)
+dictionary_check(WORKER_LIST, DICTIONARY)
 #Send out the work
 send_work(WORKER_LIST, ARGS.string, ARGS.type, ARGS.port)
 
