@@ -20,9 +20,11 @@
 #       - netaddr
 #       - socket
 #       - requests
-#   SCRIPT VER: 0.6
+#   SCRIPT VER: 1.0a
 #   REQURIED FILES:
-#       - /etc/job_manager/job_manager.config
+#       - dictionary file. Set config variable "DICTIONARY" down below.
+#   TODO:
+#       make dictionary variable a user input OR make the PORT variable a config variable
 #
 ###########################################################################
 #
@@ -43,11 +45,10 @@ import socket
 import requests
 import time
 import os
-import sys
 import re
 
 #Set config variables
-DICTIONARY = "/tmp/Dictionary/dictionary.txt"
+DICTIONARY = "/home/$USER/Dictionary/dictionary.txt"
 
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
@@ -119,7 +120,7 @@ def worker_discover(PORT):
 
 #dictionary remover/checker
 def removeOldDictionaries(DICTIONARY):
-    passwordLoc = os.path.dirname(DICTIONARY)
+    passwordLoc = os.path.dirname(DICTIONARY) + "/"
     splitDictRegex = re.compile(r'\dof\d.txt')  # this is regex to detect the split dictionaries in the folder.  This will be used to determine which files to delete.
     logging.info("Checking for old split dictionaries to delete...")
     for file in os.listdir(passwordLoc):
@@ -140,7 +141,6 @@ def dictionary_splitter(NODES, DICTIONARY):
         for line in myfile:
             passwordCounter += 1
         myfile.close()
-        print(passwordCounter)
     except FileNotFoundError:
         logging.error("Cannot find the dictionary. Exiting program.")
         exit(1)
@@ -161,16 +161,42 @@ def dictionary_splitter(NODES, DICTIONARY):
     filename = os.path.dirname(DICTIONARY) + "/{}of{}.txt".format(NODES, NODES)
     o = open(filename, "a", encoding="utf-8")
     for line in myfile:
-        print(str(line.strip()) + "\n")
         o.write(str(line.strip()) + "\n")
     o.close()
     myfile.close()
 
-###### function to check the number of split dictionaries needed and call brians functions or not
-def dictionary_check(WORKER_LIST, DICTIONARY):
-    NODES = len(WORKER_LIST)
+
+
+#This function checks the name of a text file to get the number of worker nodes that were previously used.
+def prev_dictionary_test(NODES, DICTIONARY):
+    logging.debug("Searching for previous dictionaries")
     PATH = os.path.dirname(DICTIONARY)
-    print("NODES is: {} and PATH is: {}".format(NODES, PATH))
+    count = 0
+    #First, create a list of dictionaries that should be there.
+    files_that_should_exist = []
+    for x in range(NODES+1):
+        if x == 0:
+            pass
+        else:
+            files_that_should_exist.append("{}of{}.txt".format(x, NODES))
+    logging.debug("Expecting to see the following files: {}".format(files_that_should_exist))
+    #Next, check to see if a file that matches the expected file list exists
+    # if it exists increment the counter, if not, pass
+    # the logic isn't fool-proof here. TODO: improve this algorithm slightly
+    for FILE in os.listdir(PATH):
+        if FILE in files_that_should_exist:
+            count = count + 1
+        else:
+            pass
+    logging.debug("Found split dictionaries: {}".format(count))
+    # if the count of files matches the number of nodes  all the correct dictionaries are in place
+    # else, clean up the dictionary folder and create new split dictionaries
+    if count == NODES:
+        logging.info("All split dictionaries are present.")
+        return()
+    else:
+        removeOldDictionaries(DICTIONARY)
+        dictionary_splitter(NODES, DICTIONARY)
 
 # This is the part of the script that sends a POST/GET message to the workers with the
 def send_work(WORKER_LIST, HASH, TYPE, PORT):
@@ -210,25 +236,25 @@ def worker_status(WORKER_LIST, PORT):
     for X in WORKER_LIST:
         logging.debug("Checcking the status of worker at http://{}:{}".format(X, PORT))
         url = "http://" + str(X) + ":" + str(PORT)
-        print(url)
+        logging.debug("checking status of worker: {}".format(url))
         try:
             r = requests.get(url + "/status")
-            print(r.content)
+            #print(r.content)
             if "working" in str(r.content):
-                print("worker http://{}:{} is working".format(X, PORT))
+                logging.info("worker http://{}:{} is working".format(X, PORT))
             elif "ready" in str(r.content):
-                print("worker http://{}:{} is ready for work".format(X, PORT))
+                logging.info("worker http://{}:{} is ready for work".format(X, PORT))
             elif "done" in str(r.content):
-                ##### needs formatting #####
-                print("password found! {}".format(r.content))
+                result = re.search('\[(.*)\]', str(r.content))
+                print("FOUND!: {}".format(result.group(1)))
                 worker_stop(WORKER_LIST, PORT)
                 exit(0)
             elif "error" in str(r.content):
-                print("worker http://{}:{} had an error and is not working".format(X, PORT))
+                logging.error("worker http://{}:{} had an error and is not working".format(X, PORT))
             else:
-                print("status unknown")
+                logging.error("status of worker {} unknown".format(url))
         except requests.exceptions.RequestException:
-            print("there was an error contacting worker http://{}:{}".format(X, PORT))
+            logging.error("there was an error contacting worker http://{}:{}".format(X, PORT))
 
 
 # troubleshooting. modified this to use logging. no need to delete as it can be used later during debugging
@@ -237,7 +263,7 @@ logging.debug("Type is: {}".format(ARGS.type))
 logging.debug("Port is: {}".format(ARGS.port))
 
 # Error check the input
-## there could be a function statement that checks whether or not the string is actually an md5/ntlm/etc.
+## TODO: there should be a function statement that checks whether or not the string is actually an md5/ntlm/etc.
 if ARGS.type not in ["ntlm", "md5"]:
     print("ERROR: Invalid input. [{}] is not an acceptable input.".format(ARGS.type))
     exit(1)
@@ -246,15 +272,10 @@ if ARGS.type not in ["ntlm", "md5"]:
 
 #populate the list of available workers
 WORKER_LIST = worker_discover(ARGS.port)
-print("The workers found are {}".format(WORKER_LIST))
-'''
-THis is where a call to brian's dictionary divider goes
-Some logic needs to be added to determine when each these functions needs to be ran
-'''
-
-dictionary_splitter(len(WORKER_LIST), DICTIONARY)
-dictionary_check(WORKER_LIST, DICTIONARY)
-#Send out the work
+logging.info("The workers found are {}".format(WORKER_LIST))
+# Check the dictionary file and split the dictionary if it hasn't already been done
+prev_dictionary_test(len(WORKER_LIST), DICTIONARY)
+# Send work to each worker
 send_work(WORKER_LIST, ARGS.string, ARGS.type, ARGS.port)
 
 #Continuously check the workers every five seconds for their status. The worker_status function will shut down
