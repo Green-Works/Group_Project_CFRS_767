@@ -11,6 +11,7 @@ of modifications
 #import socketserver
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
+import re
 
 hostName = ""
 hostPort = 24998
@@ -31,13 +32,23 @@ class MyServer(BaseHTTPRequestHandler):
 
         if self.path == "/status":
             self._set_response()
-            self.wfile.write(bytes("OK", "utf-8"))
+            ########## this is the response to the status question.options are [ready, done[data], error, working]
+            #self.wfile.write(bytes("ready", "utf-8"))
+            self.wfile.write(bytes("done[password is: 'password']", "utf-8"))
+            #self.wfile.write(bytes("error", "utf-8"))
+            #self.wfile.write(bytes("working", "utf-8"))
         else:
             self.wfile.write(bytes("Unrecognized request: %s" % self.path, "utf-8"))
             self.send_response(201)
 #POST is for submitting data.
     def do_POST(self):
         if self.path == "/start":
+            print( "incomming http: ", self.path )
+            content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+            post_data = self.rfile.read(content_length) # <--- Gets the data itself
+            print(post_data)
+            self._set_response()
+        elif self.path == "/stop":
             print( "incomming http: ", self.path )
             content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
             post_data = self.rfile.read(content_length) # <--- Gets the data itself
@@ -55,9 +66,9 @@ myServer = HTTPServer((hostName, hostPort), MyServer)
 print(time.asctime(), "Server Starts - %s:%s" % (hostName, hostPort))
 
 try:
-	myServer.serve_forever()
+    myServer.serve_forever()
 except KeyboardInterrupt:
-	pass
+    pass
 
 myServer.server_close()
 print(time.asctime(), "Server Stops - %s:%s" % (hostName, hostPort))
