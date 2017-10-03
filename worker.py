@@ -93,8 +93,8 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
         elif self.path == "/stop":
             logging.debug("incomming http: {}".format(self.path))
             #This saves the POST request to a string called "post_data"
-            content_length = int(self.headers['Content-Length'])  # <--- Gets the size of data
-            post_data = self.rfile.read(content_length)  # <--- Gets the data itself
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
             logging.debug("The post request is: {}".format(post_data))
             #This is the call to kill the hashcat process. The job manager will send a GET /stop request
             # to tell the worker to stop processing because another worker was successful
