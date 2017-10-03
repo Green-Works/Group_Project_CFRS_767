@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - 
 
 #Set Config Variables
 PORT = 24998
-DICTIONARY_PATH = "/home/mckelvey/Dictionary/"
+DICTIONARY_PATH = "/home/$USER/Dictionary/"
 HOSTNAME = ""
 STATUS = "start"
 
@@ -25,9 +25,9 @@ STATUS = "start"
 #This function reports back the status of hashcat and whether it is working, failed, or found a password
 def get_hashcat_status():
     #STATUS = ("ready")
-    STATUS = ("done[password is: 'password']")
+    #STATUS = ("done[password is: 'password']")
     #STATUS = ("error")
-    #STATUS = ("working")
+    STATUS = ("working")
     return(STATUS)
 
 #This function kills the hashcat process
