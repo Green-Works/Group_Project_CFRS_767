@@ -9,6 +9,7 @@ The communication piece for the job manager is done. The functions between the c
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import re
 import logging
+import subprocess
 
 #Set Logging
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
@@ -41,7 +42,10 @@ def kill_hashcat_process(PID):
 def start_hashcat(HASH, TYPE, WNUM, TOTAL_WORKERS):
     logging.debug("starting hashcat")
     logging.debug("hash: {}, type: {}, this is worker#: {} of {}".format(HASH, TYPE, WNUM, TOTAL_WORKERS))
-    PID = 12345 # this should be replaced with the process ID of hashcat
+    var m = "{} {}".format("-m", TYPE)
+    hashcatProc = subprocess.Popen(["./hashcat", m, HASH]);
+    #PID = 12345 # this should be replaced with the process ID of hashcat
+    PID = hashcatProc.pid
     return(PID)
 ############################################################################################################
 
