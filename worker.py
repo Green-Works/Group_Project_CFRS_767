@@ -43,7 +43,7 @@ def kill_hashcat_process(PID):
 def start_hashcat(HASH, TYPE, WNUM, TOTAL_WORKERS):
     logging.debug("starting hashcat")
     logging.debug("hash: {}, type: {}, this is worker#: {} of {}".format(HASH, TYPE, WNUM, TOTAL_WORKERS))
-    var m = "{} {}".format("-m", TYPE)
+    m = "{} {}".format("-m", TYPE)
     hashcatProc = subprocess.Popen([HASHCAT, m, HASH]);
     #PID = 12345 # this should be replaced with the process ID of hashcat
     PID = hashcatProc.pid
