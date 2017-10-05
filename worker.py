@@ -21,6 +21,7 @@ PORT = 24998
 DICTIONARY_PATH = "/home/$USER/Dictionary/"
 HOSTNAME = ""
 STATUS = "start"
+HASHCAT = "./usr/local/bin/hashcat"
 
 ############################################################################################################
 #This function reports back the status of hashcat and whether it is working, failed, or found a password
@@ -43,7 +44,7 @@ def start_hashcat(HASH, TYPE, WNUM, TOTAL_WORKERS):
     logging.debug("starting hashcat")
     logging.debug("hash: {}, type: {}, this is worker#: {} of {}".format(HASH, TYPE, WNUM, TOTAL_WORKERS))
     var m = "{} {}".format("-m", TYPE)
-    hashcatProc = subprocess.Popen(["./hashcat", m, HASH]);
+    hashcatProc = subprocess.Popen([HASHCAT, m, HASH]);
     #PID = 12345 # this should be replaced with the process ID of hashcat
     PID = hashcatProc.pid
     return(PID)
