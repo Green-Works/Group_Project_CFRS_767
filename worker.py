@@ -10,7 +10,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import re
 import logging
 import subprocess
-import time
 
 #Set Logging
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
@@ -21,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - 
 PORT = 24998
 DICTIONARY_PATH = "/home/$USER/Dictionary/"
 HOSTNAME = ""
-STATUS = "start"
+STATUS = "Waiting for work"
 HASHCAT = "./usr/local/bin/hashcat"
 
 ############################################################################################################
@@ -40,63 +39,61 @@ def kill_hashcat_process(PID):
     msg = 0 #0 for success killing hashcat
     return(msg)
 
-#This function starts the hashcat process
-def start_hashcat(inputHash, hashType, WNUM, TOTAL_WORKERS):
+#This function runs hashcat
+def run_hashcat(inputHash, hashTypeNumber, DICTIONARY_PATH):
     logging.debug("starting hashcat")
-    logging.debug("hash: {}, type: {}, this is worker#: {} of {}".format(HASH, TYPE, WNUM, TOTAL_WORKERS))
-    m = "{} {}".format("-m", TYPE)
-    
-    #force hashType to uppercase to match the dictionary
-    hashType = hashType.upper()
-    
-    # hastTypes is a dictionary that links the hash algorithm to its hashcat hash number
-    hashTypes = {'MD5' : '0', 'MD5Crypt' : '500', 'SHA1' : '100', 'SHA-512(Unix)' : '1800', 'NTLMV1' : '1000', 'NTLMV2' : '1000', 'WPA' : '2500', 'WPA2' : '2500', 'Bcrypt': '3200', 'NTLM' : '1000'}
-
+     
+        #Set this to where ever we want the password file to be on the AWS instance.  This variable must stay local for this to work
+    PASSWORD_PATH = "/root/Desktop/pass.txt"
+    global status
     attackType = 0
 
-    #edit the below line to match your dictionary location
-    DICTIONARY_PATH = "/usr/share/wordlists/rockyou.txt"
-    HOSTNAME = ""
-    STATUS = "start"
-    
-    #edit the below line to match your hashcat location
-    HASHCAT = "/usr/bin/hashcat"
+    status = 'Working'
+
+    #check for a previous version of the temp file pass.txt. if it exists, deletes it
+    if os.path.isfile(PASSWORD_PATH):
+        logging.debug('Removing previous version of pass.txt file...')
+        os.unlink(PASSWORD_PATH)
 
     logging.info('Building string to pass to command shell...')
 
-    m = "{0} {1}".format("-m", hashTypes[hashType])
-    o = "{0} {1}".format("-o", '~/Desktop/pass.txt')
+    m = "{0} {1}".format("-m", hashTypeNumber)
+    o = "{0} {1}".format("-o", PASSWORD_PATH)
     f = "{0}".format('--outfile-format=2')
-    logging.debug(hashType)
-    logging.debug(inputHash)
     logging.debug('The string passed is: {0} -a {1} {2} {3} {4} {5} {6} {7} --show'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH))
-    
-    #First the program checks the potfile to see if the password has been cracked by running with the --show option
-    subprocess.call('{0} -a {1} {2} {3} {4} {5} {6} {7} --show'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH), shell=True)
 
-    # Wait to create the pass.txt file, otherwise the program fails
-    time.sleep(2)
-    
-    #It then checks the pass.txt file that was created. If it is empty it runs hashcat. If there is an entry, that means the password had been seen before and it gets the password from the pass.txt file
-    check = open('pass.txt', 'r', encoding="utf-8")
+    #First the program checks the potfile to see if the password has been cracked by running with the --show option
+    potFileCheck = subprocess.run('{0} -a {1} {2} {3} {4} {5} {6} {7} --show'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH), stderr=subprocess.PIPE, shell=True)
+    print(potFileCheck.stdout)
+
+    #It then checks the pass.txt file that was created.
+    check = open(PASSWORD_PATH, 'r', encoding="utf-8")
     PWD = check.readline()
-    logging.debug('Password from pass.txt is: ' + PWD)
-    if  PWD == "":
+    check.seek(0)
+    check.close()
+    #If pass.txt empty it runs hashcat.
+    if PWD == "":
         logging.debug('Password not found in potfile. Attempting to crack it...')
-        subprocess.call('{0} -a {1} {2} {3} {4} {5} {6} {7}'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH), shell=True)
+        result = subprocess.run('{0} -a {1} {2} {3} {4} {5} {6} {7}'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        print(result.stdout)
+        logging.debug('The string passed was: {0} -a {1} {2} {3} {4} {5} {6} {7}'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH))
+
+        #Once hashcat is done, it rechecks pass.txt to see if hashcat found a password
+        recheck = open(PASSWORD_PATH, 'r', encoding="utf-8")
+        PWD2 = recheck.readline()
+        recheck.close()
+        #If pass.txt is empty, hashcat did not find a password
+        if PWD2 == "":
+            status = 'Work completed. Password not found'
+            print(status)
+        #If there is an entry, the program gets the password from the pass.txt file
+        else:
+            status = 'Work completed. Password is: {0}'.format(PWD2)
+            print(status)
+    #If the password is in the potfile, the program gets it from pass.txt
     else:
         logging.debug('Password cracked: ' + PWD)
-    check.close()
-    #get_PID()
-    
-############################################################################################################
-#def get_PID():
-#    """This function returns the PID of hashcat as a string.  It requires the pgrep tool. Be sure to change the file path of pgrep to that of the machine this will be used on."""
-#    #pgrepFilePath = '/usr/bin/pgrep'
-#    PID = proc.pid
-#    #PID = subprocess.call('{0} -f {1}'.format(pgrepFilePath, 'hashcat'), shell=True)
-#    print('Hashcat PID is: {}'.format(str(PID)))
-#    #return(PID)   
+        status = 'Work completed. Password is: {0}'.format(PWD)
 ############################################################################################################
 
 #Configure the WORKER_SERVICE_OPTIONS
