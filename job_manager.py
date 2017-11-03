@@ -48,8 +48,8 @@ import os
 import re
 
 #Set config variables
-DICTIONARY = "/home/$USER/Dictionary/dictionary.txt"
-
+DICTIONARY = "/home/mckelvey/Dictionary/dictionary.txt"
+HASH_VALUES = {'MD5': 0, 'MD5CRYPT': 500, 'SHA1': 100, 'SHA512UNIX':1800, 'NTLM': 1000, 'NTLM2': 5600, 'WPA': 2500, 'BCRYPT': 3200 }
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
 # logging.disable(logging.CRITICAL)
@@ -264,10 +264,13 @@ logging.debug("Port is: {}".format(ARGS.port))
 
 # Error check the input
 ## TODO: there should be a function statement that checks whether or not the string is actually an md5/ntlm/etc.
-if ARGS.type not in ["ntlm", "md5"]:
-    print("ERROR: Invalid input. [{}] is not an acceptable input.".format(ARGS.type))
+#Error check the type
+if ARGS.type.upper() not in HASH_VALUES:
+    logging.error("ERROR. Hash type not in available values\n Please only use these values {}".format(HASH_VALUES.keys()))
     exit(1)
-
+else:
+    logging.debug("Hash code is: {}".format(HASH_VALUES[ARGS.type.upper()]))
+    HASHCODE = HASH_VALUES[ARGS.type.upper()]
 # Main logic
 
 #populate the list of available workers
@@ -276,7 +279,7 @@ logging.info("The workers found are {}".format(WORKER_LIST))
 # Check the dictionary file and split the dictionary if it hasn't already been done
 prev_dictionary_test(len(WORKER_LIST), DICTIONARY)
 # Send work to each worker
-send_work(WORKER_LIST, ARGS.string, ARGS.type, ARGS.port)
+send_work(WORKER_LIST, ARGS.string, HASHCODE, ARGS.port)
 
 #Continuously check the workers every five seconds for their status. The worker_status function will shut down
 #the workers when it finishes
