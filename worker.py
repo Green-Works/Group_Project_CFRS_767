@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - 
 
 #Set Config Variables
 PORT = 24998
-DICTIONARY_PATH = "/home/$USER/Dictionary/"
+DICTIONARY_PATH = "/home/ec2-user/efs/"
 HOSTNAME = ""
 STATUS = "Waiting for work"
 HASHCAT = "./usr/local/bin/hashcat"
@@ -44,7 +44,7 @@ def run_hashcat(inputHash, hashTypeNumber, DICTIONARY_PATH):
     logging.debug("starting hashcat")
      
         #Set this to where ever we want the password file to be on the AWS instance.  This variable must stay local for this to work
-    PASSWORD_PATH = "/root/Desktop/pass.txt"
+    PASSWORD_PATH = "/tmp/pass.txt"
     global status
     attackType = 0
 
