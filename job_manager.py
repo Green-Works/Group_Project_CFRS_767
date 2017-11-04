@@ -49,7 +49,7 @@ import os
 import re
 
 #Set config variables
-DICTIONARY = "/tmp/rockyou.txt"
+DICTIONARY = "/usr/share/wordlists/clean_rockyou.txt"
 HASH_VALUES = {'MD5': 0, 'MD5CRYPT': 500, 'SHA1': 100, 'SHA512UNIX':1800, 'NTLM': 1000, 'NTLM2': 5600, 'WPA': 2500, 'BCRYPT': 3200 }
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
@@ -138,7 +138,7 @@ def dictionary_splitter(NODES, DICTIONARY):
     logging.debug("NODES: {}, DICTIONARY: {}".format(NODES, DICTIONARY))
     try:
         #myfile = open(DICTIONARY, 'r', encoding="utf-8", errors="ignore")
-        myfile = open(DICTIONARY, 'r')
+        myfile = open(DICTIONARY, 'r', encoding="utf-8", errors="ignore")
         # Count the number of passwords
         for line in myfile:
             passwordCounter += 1
@@ -148,12 +148,12 @@ def dictionary_splitter(NODES, DICTIONARY):
         exit(1)
 
     countPerNode = int((passwordCounter / NODES))
-    myfile = open(DICTIONARY, 'r', encoding="utf-8")
+    myfile = open(DICTIONARY, 'r')
 
     for i in range(NODES):
         # create a dictionary file for each worker
         filename = os.path.dirname(DICTIONARY) + "/{0}of{1}.txt".format(i + 1, NODES)
-        o = open(filename, "w", encoding="utf-8")
+        o = open(filename, "w")
         logging.debug("Creating wordlist {}".format(filename))
 
         # for each new password list that is not the last password list, enter passwords
@@ -161,7 +161,7 @@ def dictionary_splitter(NODES, DICTIONARY):
             o.write(str(myfile.readline()))
         o.close()
     filename = os.path.dirname(DICTIONARY) + "/{}of{}.txt".format(NODES, NODES)
-    o = open(filename, "a", encoding="utf-8")
+    o = open(filename, "a")
     for line in myfile:
         o.write(str(line.strip()) + "\n")
     o.close()
