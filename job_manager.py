@@ -136,7 +136,7 @@ def dictionary_splitter(NODES, DICTIONARY):
     passwordCounter = 0
     logging.debug("NODES: {}, DICTIONARY: {}".format(NODES, DICTIONARY))
     try:
-        myfile = open(DICTIONARY, 'r', encoding="utf-8")
+        myfile = open(DICTIONARY, 'r')
         # Count the number of passwords
         for line in myfile:
             passwordCounter += 1
