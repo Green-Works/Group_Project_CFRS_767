@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# chkconfig: 35 90 12
+# description: worker.py service 
+#
+
+# Get function from functions library
+. /etc/init.d/functions
+
+# Start the worker.py service
+start() {
+        initlog -c "echo -n Starting worker.py service: "
+        /usr/local/bin/worker.py &
+        ### Create the lock file ###
+        touch /var/lock/subsys/worker.py.lk
+        success $"worker.py service startup"
+        echo
+}
+
+# Restart the worker.py service
+stop() {
+        initlog -c "echo -n Stopping worker.py service: "
+        killproc worker.py
+        ### Now, delete the lock file ###
+        rm -f /var/lock/subsys/worker.py.lk
+        echo
+}
+
+### main logic ###
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status worker.py
+        ;;
+  restart|reload|condrestart)
+        stop
+        start
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|reload|status}"
+        exit 1
+esac
+
+exit 0
