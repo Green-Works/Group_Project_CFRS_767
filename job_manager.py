@@ -38,6 +38,7 @@
 '''
 
 import argparse
+import codecs
 import logging
 import netifaces
 import netaddr
@@ -48,7 +49,7 @@ import os
 import re
 
 #Set config variables
-DICTIONARY = "/home/ec2-user/efs/rockyou.txt"
+DICTIONARY = "/tmp/rockyou.txt"
 HASH_VALUES = {'MD5': 0, 'MD5CRYPT': 500, 'SHA1': 100, 'SHA512UNIX':1800, 'NTLM': 1000, 'NTLM2': 5600, 'WPA': 2500, 'BCRYPT': 3200 }
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
@@ -136,6 +137,7 @@ def dictionary_splitter(NODES, DICTIONARY):
     passwordCounter = 0
     logging.debug("NODES: {}, DICTIONARY: {}".format(NODES, DICTIONARY))
     try:
+        #myfile = open(DICTIONARY, 'r', encoding="utf-8", errors="ignore")
         myfile = open(DICTIONARY, 'r')
         # Count the number of passwords
         for line in myfile:
@@ -246,9 +248,9 @@ def worker_status(WORKER_LIST, PORT):
                 logging.info("worker http://{}:{} is ready for work".format(X, PORT))
             elif "unsuccessful" in str(r.content):
                 print("worker {} completed and did not find the password".format(X))
+                WORKER_LIST.remove(X)
             elif "done" in str(r.content):
-                result = re.search('\[(.*)\]', str(r.content))
-                print("FOUND!: {}".format(result.group(1)))
+                print("FOUND: {}".format(str(r.content.decode("utf-8"))))
                 worker_stop(WORKER_LIST, PORT)
                 exit(0)
             elif "error" in str(r.content):
