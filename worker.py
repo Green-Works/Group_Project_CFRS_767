@@ -135,7 +135,7 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
             TOTAL_WORKERS = re.search('(?<=totalw\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
 
             #start the hashcat process and track the process ID
-            HASHCAT_PID = start_hashcat(HASH, TYPE, WNUM, TOTAL_WORKERS)
+            HASHCAT_PID = run_hashcat(HASH, TYPE, WNUM, TOTAL_WORKERS)
             logging.info("Hashcat started on worker {}. Process ID {}".format(WNUM, HASHCAT_PID))
 
             self._set_response()
