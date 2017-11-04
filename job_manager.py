@@ -195,7 +195,7 @@ def prev_dictionary_test(NODES, DICTIONARY):
         logging.info("All split dictionaries are present.")
         return()
     else:
-        removeOldDictionaries(DICTIONARY)
+    #   removeOldDictionaries(DICTIONARY)
         dictionary_splitter(NODES, DICTIONARY)
 
 # This is the part of the script that sends a POST/GET message to the workers with the
