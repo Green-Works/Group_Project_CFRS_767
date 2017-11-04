@@ -1,0 +1,9 @@
+[Unit]
+Description=Distributed Password Cracker Worker.py startup
+After=syslog.target network.target
+ 
+[Service]
+ExecStart=/usr/local/bin/worker.py 
+ 
+[Install]
+WantedBy=multi-user.target
