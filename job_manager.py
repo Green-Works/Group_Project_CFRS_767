@@ -244,6 +244,8 @@ def worker_status(WORKER_LIST, PORT):
                 logging.info("worker http://{}:{} is working".format(X, PORT))
             elif "ready" in str(r.content):
                 logging.info("worker http://{}:{} is ready for work".format(X, PORT))
+            elif "unsuccessful" in str(r.content):
+                print("worker {} completed and did not find the password".format(X))
             elif "done" in str(r.content):
                 result = re.search('\[(.*)\]', str(r.content))
                 print("FOUND!: {}".format(result.group(1)))
