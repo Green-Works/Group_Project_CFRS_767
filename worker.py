@@ -21,7 +21,7 @@ PORT = 24998
 DICTIONARY_PATH = "/home/ec2-user/efs/"
 HOSTNAME = ""
 STATUS = "Waiting for work"
-HASHCAT = "./usr/local/bin/hashcat"
+HASHCAT = "./usr/bin/hashcat64.bin"
 
 ############################################################################################################
 #This function reports back the status of hashcat and whether it is working, failed, or found a password
