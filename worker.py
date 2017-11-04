@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - 
 
 #Set Config Variables
 PORT = 24998
-DICTIONARY_PATH = "/tmp/"
+DICTIONARY_PATH = "/usr/share/wordlists/"
 HOSTNAME = ""
 STATUS = "Waiting for work"
 HASHCAT = "/usr/bin/hashcat"
