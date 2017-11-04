@@ -48,7 +48,7 @@ import os
 import re
 
 #Set config variables
-DICTIONARY = "/home/mckelvey/Dictionary/dictionary.txt"
+DICTIONARY = "/home/ec2-user/efs/rockyou.txt"
 HASH_VALUES = {'MD5': 0, 'MD5CRYPT': 500, 'SHA1': 100, 'SHA512UNIX':1800, 'NTLM': 1000, 'NTLM2': 5600, 'WPA': 2500, 'BCRYPT': 3200 }
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
