@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - 
 
 #Set Config Variables
 PORT = 24998
-DICTIONARY_PATH = "/usr/share/wordlists/"
+DICTIONARY_PATH = "/tmp/"
 HOSTNAME = ""
 STATUS = "Waiting for work"
 HASHCAT = "/usr/bin/hashcat"
@@ -93,11 +93,12 @@ def run_hashcat(inputHash, hashTypeNumber, WNUM, TOTAL_WORKERS):
         #If there is an entry, the program gets the password from the pass.txt file
         else:
             STATUS = 'Work done. Password is: {0}'.format(PWD2)
-            print(STATUS)
+            #print(STATUS)
     #If the password is in the potfile, the program gets it from pass.txt
     else:
         logging.debug('Password cracked: ' + PWD)
         STATUS = 'Work done. Password is: {0}'.format(PWD)
+        print(STATUS)
 ############################################################################################################
 
 #Configure the WORKER_SERVICE_OPTIONS
@@ -140,8 +141,6 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
             #start the hashcat process and track the process ID
             HASHCAT_PID = run_hashcat(HASH, TYPE, WNUM, TOTAL_WORKERS)
             logging.info("Hashcat started on worker {}. Process ID {}".format(WNUM, HASHCAT_PID))
-            STATE = state_reset("stop".encode("utf-8"))
-            logging.debug("Worker reset. New state is: {}".format(STATE))
             self._set_response()
 
         #Stop commands are also sent via POST
