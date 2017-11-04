@@ -48,7 +48,7 @@ def run_hashcat(inputHash, hashTypeNumber, DICTIONARY_PATH):
     global status
     attackType = 0
 
-    status = 'Working'
+    status = 'working'
 
     #check for a previous version of the temp file pass.txt. if it exists, deletes it
     if os.path.isfile(PASSWORD_PATH):
@@ -84,16 +84,16 @@ def run_hashcat(inputHash, hashTypeNumber, DICTIONARY_PATH):
         recheck.close()
         #If pass.txt is empty, hashcat did not find a password
         if PWD2 == "":
-            status = 'Work completed. Password not found'
+            status = 'unsuccessful. Password not found'
             print(status)
         #If there is an entry, the program gets the password from the pass.txt file
         else:
-            status = 'Work completed. Password is: {0}'.format(PWD2)
+            status = 'Work done. Password is: {0}'.format(PWD2)
             print(status)
     #If the password is in the potfile, the program gets it from pass.txt
     else:
         logging.debug('Password cracked: ' + PWD)
-        status = 'Work completed. Password is: {0}'.format(PWD)
+        status = 'Work done. Password is: {0}'.format(PWD)
 ############################################################################################################
 
 #Configure the WORKER_SERVICE_OPTIONS
