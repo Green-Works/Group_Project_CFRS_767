@@ -38,7 +38,6 @@
 '''
 
 import argparse
-import codecs
 import logging
 import netifaces
 import netaddr
@@ -49,24 +48,21 @@ import os
 import re
 
 #Set config variables
-DICTIONARY = "/usr/share/wordlists/clean_rockyou.txt"
+DICTIONARY = "/tmp/rockyou.txt"
 HASH_VALUES = {'MD5': 0, 'MD5CRYPT': 500, 'SHA1': 100, 'SHA512UNIX':1800, 'NTLM': 1000, 'NTLM2': 5600, 'WPA': 2500, 'BCRYPT': 3200 }
+PORT = 24998
+MANUAL_WORKER_LIST = ['127.0.0.1']
+
+# Set Logging
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 # Comment out the line below to enable logging to the terminal
 # logging.disable(logging.CRITICAL)
 
-
-
-'''
 # Parse inputs
-# Question: do we only want to pass a single hash or have the option to pass
-# a text file of several hashes (as long as the hashes are the same type)?
-'''
-
 PARSE = argparse.ArgumentParser(description="Distributed dictionary attack on a hash!")
 PARSE.add_argument("-s", "--string", help="the hash string to be cracked")
-PARSE.add_argument("-t", "--type", help="the type of hash supplied. Supported options are [ ntlm | md5 ]")
-PARSE.add_argument("-p", "--port", type=int, help="TCP port workers are using")
+PARSE.add_argument("-t", "--type", help="the type of hash supplied. Supported options are {}".format(HASH_VALUES.keys()))
+PARSE.add_argument("-m", "--mode", choices=['auto','manual'], help="Choose worker discovery mode: auto | manual ")
 ARGS = PARSE.parse_args()
 
 # credit to https://gist.github.com/gkbrk/99442e1294a6c83368f5#file-scanner-py-L46 for this function
@@ -79,44 +75,57 @@ def is_port_open(host, port): #Return boolean
     except socket.error:
         return False
     return True
+
 '''
 This module discovers the workers up on the wire based on a specific open port.
-Further error checking could be done on this to make sure a worker was listening on the given port
-and not some other service (i.e. a specific GET request)
 '''
 
-def worker_discover(PORT):
+def worker_discover(PORT, MODE):
+    global MANUAL_WORKER_LIST
     WORKER_LIST = []
-    logging.debug("Searching for workers on local network using tcp port {}".format(PORT))
-    for X in netifaces.interfaces():
-        INTERFACE_DATA = netifaces.ifaddresses(X).get(netifaces.AF_INET)
-        IP = INTERFACE_DATA[0]['addr']
-        NETMASK = INTERFACE_DATA[0]['netmask']
-        CIDR = netaddr.IPAddress(NETMASK).netmask_bits()
-        netaddr.IPAddress(IP)
-        NETWORK = IP + "/" + str(CIDR)
-        netaddr.IPNetwork(NETWORK)
-        logging.debug("Interface: {} \tIP: {}\tNETMASK: {}".format(X, IP, CIDR))
-        type(IP)
-        #Special check for the local host otherwise the scan would take forever since localhost CIDR is /8
-        if IP[0:3] == "127":
-            is_open = is_port_open(IP, PORT)
-            if is_open is True:
-                WORKER_LIST.extend([str(IP)])
-                logging.debug("port {} open on localhost".format(PORT))
+    if MODE == "manual":
+        logging.debug("Mode is manual. Checking manually entered workers")
+        for X in MANUAL_WORKER_LIST:
+            is_open = is_port_open(X, PORT)
+            if is_open is False:
+                logging.error("ERROR: Worker {} is not up. Please start worker on this host or disable this IP. Exiting.".format(X))
+                exit(1)
             else:
-                logging.debug("port {} is NOT open on localhost".format(PORT))
-        #this is the scan for all other interfaces. Variable 'Y' contains a single ip address in the CIDR range
-        else:
-            for Y in netaddr.IPNetwork(NETWORK):
-                if str(Y) == IP:
-                    logging.debug("skipping scan on IP: {}".format(str(Y)))
+                logging.debug("All workers present and accounted for. Using these workers {}".format(MANUAL_WORKER_LIST))
+                WORKER_LIST = MANUAL_WORKER_LIST
+    elif MODE == "auto":
+        logging.debug("Searching for workers on local network using tcp port {}".format(PORT))
+        for X in netifaces.interfaces():
+            INTERFACE_DATA = netifaces.ifaddresses(X).get(netifaces.AF_INET)
+            IP = INTERFACE_DATA[0]['addr']
+            NETMASK = INTERFACE_DATA[0]['netmask']
+            CIDR = netaddr.IPAddress(NETMASK).netmask_bits()
+            netaddr.IPAddress(IP)
+            NETWORK = IP + "/" + str(CIDR)
+            netaddr.IPNetwork(NETWORK)
+            logging.debug("Interface: {} \tIP: {}\tNETMASK: {}".format(X, IP, CIDR))
+            type(IP)
+            #Special check for the local host otherwise the scan would take forever since localhost CIDR is /8
+            if IP[0:3] == "127":
+                is_open = is_port_open(IP, PORT)
+                if is_open is True:
+                    WORKER_LIST.extend([str(IP)])
+                    logging.debug("port {} open on localhost".format(PORT))
                 else:
-                    is_open = is_port_open(str(Y), PORT)
-                    if is_open is True:
-                        WORKER_LIST.extend([str(Y)])
-                        logging.debug("port {} open on IP {}".format(PORT, str(Y)))
-        logging.debug("Workers found: {}".format(WORKER_LIST))
+                    logging.debug("port {} is NOT open on localhost".format(PORT))
+            #this is the scan for all other interfaces. Variable 'Y' contains a single ip address in the CIDR range
+            else:
+                for Y in netaddr.IPNetwork(NETWORK):
+                    if str(Y) == IP:
+                        logging.debug("skipping scan on IP: {}".format(str(Y)))
+                    else:
+                        is_open = is_port_open(str(Y), PORT)
+                        if is_open is True:
+                            WORKER_LIST.extend([str(Y)])
+                            logging.debug("port {} open on IP {}".format(PORT, str(Y)))
+            logging.debug("Workers found: {}".format(WORKER_LIST))
+    else:
+        logging.error("Unknown mode {}".format(MODE))
     return(WORKER_LIST)
 
 #dictionary remover/checker
@@ -166,8 +175,6 @@ def dictionary_splitter(NODES, DICTIONARY):
         o.write(str(line.strip()) + "\n")
     o.close()
     myfile.close()
-
-
 
 #This function checks the name of a text file to get the number of worker nodes that were previously used.
 def prev_dictionary_test(NODES, DICTIONARY):
@@ -232,7 +239,6 @@ def worker_stop(WORKER_LIST, PORT):
         except requests.exceptions.RequestException:
             logging.info("encountered an error stopping worker {}".format(url))
 
-
 #This function checks the status of the workers
 def worker_status(WORKER_LIST, PORT):
     for X in WORKER_LIST:
@@ -259,12 +265,12 @@ def worker_status(WORKER_LIST, PORT):
                 logging.error("status of worker {} unknown".format(url))
         except requests.exceptions.RequestException:
             logging.error("there was an error contacting worker http://{}:{}".format(X, PORT))
-
+        return(WORKER_LIST)
 
 # troubleshooting. modified this to use logging. no need to delete as it can be used later during debugging
 logging.debug("String is: {}".format(ARGS.string))
 logging.debug("Type is: {}".format(ARGS.type))
-logging.debug("Port is: {}".format(ARGS.port))
+logging.debug("Mode is: {}".format(ARGS.mode))
 
 # Error check the input
 ## TODO: there should be a function statement that checks whether or not the string is actually an md5/ntlm/etc.
@@ -278,16 +284,20 @@ else:
 # Main logic
 
 #populate the list of available workers
-WORKER_LIST = worker_discover(ARGS.port)
+WORKER_LIST = worker_discover(PORT, ARGS.mode)
 logging.info("The workers found are {}".format(WORKER_LIST))
 # Check the dictionary file and split the dictionary if it hasn't already been done
 prev_dictionary_test(len(WORKER_LIST), DICTIONARY)
 # Send work to each worker
-send_work(WORKER_LIST, ARGS.string, HASHCODE, ARGS.port)
+send_work(WORKER_LIST, ARGS.string, HASHCODE, PORT)
 
 #Continuously check the workers every five seconds for their status. The worker_status function will shut down
 #the workers when it finishes
 while True:
-    logging.debug("Checking worker status")
-    worker_status(WORKER_LIST, ARGS.port)
+    logging.debug("Checking worker status on workers {}".format(WORKER_LIST))
+    if WORKER_LIST == []:
+        print("done")
+        exit(0)
+    else:
+        WORKER_LIST = worker_status(WORKER_LIST, PORT)
     time.sleep(5)
