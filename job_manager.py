@@ -2,7 +2,7 @@
 '''
 ############################################################################
 #
-#   CFRS-767 Group Project - JobManager
+#   CFRS-767 Group Project - job_manager.py
 #        - MC
 #        - BD
 #        - TM
@@ -14,17 +14,18 @@
 #   PYTHON VERSION: 3.5 (tested)
 #   MODULES REQUIRED:
 #       - argparse
-#       - time
 #       - logging
 #       - netifaces
 #       - netaddr
 #       - socket
 #       - requests
+#       - time
+#       - os
 #   SCRIPT VER: 1.0a
 #   REQURIED FILES:
 #       - dictionary file. Set config variable "DICTIONARY" down below.
 #   TODO:
-#       make dictionary variable a user input OR make the PORT variable a config variable
+#       verify given hash matches given type
 #
 ###########################################################################
 #
@@ -45,7 +46,7 @@ import socket
 import requests
 import time
 import os
-import re
+
 
 #Set config variables
 DICTIONARY = "/tmp/rockyou.txt"
@@ -65,8 +66,8 @@ PARSE.add_argument("-t", "--type", help="the type of hash supplied. Supported op
 PARSE.add_argument("-m", "--mode", choices=['auto','manual'], help="Choose worker discovery mode: auto | manual ")
 ARGS = PARSE.parse_args()
 
+# This function scans a ip:port and returns whether or not the port is open.
 # credit to https://gist.github.com/gkbrk/99442e1294a6c83368f5#file-scanner-py-L46 for this function
-# it scans a ip:port and returns whether or not the port is open.
 def is_port_open(host, port): #Return boolean
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -76,22 +77,20 @@ def is_port_open(host, port): #Return boolean
         return False
     return True
 
-'''
-This module discovers the workers up on the wire based on a specific open port.
-'''
 
+#This function discovers the workers up on the wire based on a specific open port.
 def worker_discover(PORT, MODE):
     global MANUAL_WORKER_LIST
     WORKER_LIST = []
     if MODE == "manual":
-        logging.debug("Mode is manual. Checking manually entered workers")
+        logging.info("Mode is manual. Checking manually entered workers")
         for X in MANUAL_WORKER_LIST:
             is_open = is_port_open(X, PORT)
             if is_open is False:
                 logging.error("ERROR: Worker {} is not up. Please start worker on this host or disable this IP. Exiting.".format(X))
                 exit(1)
             else:
-                logging.debug("All workers present and accounted for. Using these workers {}".format(MANUAL_WORKER_LIST))
+                logging.info("All workers present and accounted for. Using these workers {}".format(MANUAL_WORKER_LIST))
                 WORKER_LIST = MANUAL_WORKER_LIST
     elif MODE == "auto":
         logging.debug("Searching for workers on local network using tcp port {}".format(PORT))
@@ -128,25 +127,11 @@ def worker_discover(PORT, MODE):
         logging.error("Unknown mode {}".format(MODE))
     return(WORKER_LIST)
 
-#dictionary remover/checker
-def removeOldDictionaries(DICTIONARY):
-    passwordLoc = os.path.dirname(DICTIONARY) + "/"
-    splitDictRegex = re.compile(r'\dof\d.txt')  # this is regex to detect the split dictionaries in the folder.  This will be used to determine which files to delete.
-    logging.info("Checking for old split dictionaries to delete...")
-    for file in os.listdir(passwordLoc):
-        if splitDictRegex.search(file):
-            # if a split dictionary is found, remove it
-            logging.info("an old dictionary was found: {}. Removing it".format(file))
-            os.remove(passwordLoc + file)
-        else:
-            logging.info("No old dictionaries to delete.")
-
 #This script takes a text file of passwords and divides it into separate documents based on user input.
 def dictionary_splitter(NODES, DICTIONARY):
     passwordCounter = 0
     logging.debug("NODES: {}, DICTIONARY: {}".format(NODES, DICTIONARY))
     try:
-        #myfile = open(DICTIONARY, 'r', encoding="utf-8", errors="ignore")
         myfile = open(DICTIONARY, 'r', encoding="utf-8", errors="ignore")
         # Count the number of passwords
         for line in myfile:
@@ -204,10 +189,9 @@ def prev_dictionary_test(NODES, DICTIONARY):
         logging.info("All split dictionaries are present.")
         return()
     else:
-    #   removeOldDictionaries(DICTIONARY)
         dictionary_splitter(NODES, DICTIONARY)
 
-# This is the part of the script that sends a POST/GET message to the workers with the
+# This is the part of the script that sends a POST/GET message to the workers with the hash and type
 def send_work(WORKER_LIST, HASH, TYPE, PORT):
     logging.info("sending work...")
     TOTAL_WORKERS = len(WORKER_LIST)
@@ -219,14 +203,12 @@ def send_work(WORKER_LIST, HASH, TYPE, PORT):
         payload = {'hash': HASH, 'type': TYPE, 'wnum': i, 'totalw': TOTAL_WORKERS}
         try:
             r = requests.post(start, data=payload)
-            #logging.debug("POST command for worker: {}".format(r.url))
             logging.info("http://{}:{} --- POST: hash: {} type: {} Portion: {}/{}".format(x, PORT, HASH, TYPE, i, TOTAL_WORKERS))
         except requests.exceptions.RequestException:
             logging.info("encountered an error")
         i += 1
 
-#This should send a 'stop' post to the workers and ensure they go down gracefully
-## needs some error checking to make sure the servers go back to a 'ready' state
+#This should send a 'stop' post to the remaining workers when one worker cracks a hash
 def worker_stop(WORKER_LIST, PORT):
     payload = "stop"
     for X in WORKER_LIST:
@@ -239,38 +221,37 @@ def worker_stop(WORKER_LIST, PORT):
         except requests.exceptions.RequestException:
             logging.info("encountered an error stopping worker {}".format(url))
 
-#This function checks the status of the workers
+#This function checks the status of the workers. This keys in on 4 possible states: 'working', 'ready', 'unsuccessful',
+#and 'done'.
 def worker_status(WORKER_LIST, PORT):
     for X in WORKER_LIST:
-        logging.debug("Checcking the status of worker at http://{}:{}".format(X, PORT))
         url = "http://" + str(X) + ":" + str(PORT)
-        logging.debug("checking status of worker: {}".format(url))
+        logging.info("Checking status of worker: {}".format(url))
         try:
             r = requests.get(url + "/status")
-            #print(r.content)
             if "working" in str(r.content):
-                logging.info("worker http://{}:{} is working".format(X, PORT))
+                logging.info("Worker {} is working".format(url))
             elif "ready" in str(r.content):
-                logging.info("worker http://{}:{} is ready for work".format(X, PORT))
+                logging.info("Worker {} is ready for work".format(url))
             elif "unsuccessful" in str(r.content):
-                print("worker {} completed and did not find the password".format(X))
+                print("Worker {} completed and did not find the password".format(url))
                 WORKER_LIST.remove(X)
             elif "done" in str(r.content):
                 print("FOUND: {}".format(str(r.content.decode("utf-8"))))
                 worker_stop(WORKER_LIST, PORT)
                 exit(0)
             elif "error" in str(r.content):
-                logging.error("worker http://{}:{} had an error and is not working".format(X, PORT))
+                logging.error("Worker {} had an error and is not working".format(url))
             else:
-                logging.error("status of worker {} unknown".format(url))
+                logging.error("Status of worker {} unknown".format(url))
         except requests.exceptions.RequestException:
-            logging.error("there was an error contacting worker http://{}:{}".format(X, PORT))
+            logging.error("There was an error contacting worker {}".format(url))
         return(WORKER_LIST)
 
-# troubleshooting. modified this to use logging. no need to delete as it can be used later during debugging
-logging.debug("String is: {}".format(ARGS.string))
-logging.debug("Type is: {}".format(ARGS.type))
-logging.debug("Mode is: {}".format(ARGS.mode))
+# Display input arguments
+logging.info("String is: {}".format(ARGS.string))
+logging.info("Type is: {}".format(ARGS.type))
+logging.info("Mode is: {}".format(ARGS.mode))
 
 # Error check the input
 ## TODO: there should be a function statement that checks whether or not the string is actually an md5/ntlm/etc.
@@ -279,7 +260,7 @@ if ARGS.type.upper() not in HASH_VALUES:
     logging.error("ERROR. Hash type not in available values\n Please only use these values {}".format(HASH_VALUES.keys()))
     exit(1)
 else:
-    logging.debug("Hash code is: {}".format(HASH_VALUES[ARGS.type.upper()]))
+    logging.info("Hash code is: {}".format(HASH_VALUES[ARGS.type.upper()]))
     HASHCODE = HASH_VALUES[ARGS.type.upper()]
 # Main logic
 
