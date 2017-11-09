@@ -65,10 +65,10 @@ PARSE = argparse.ArgumentParser(description="Distributed dictionary attack on a 
 PARSE.add_argument("-s", "--string", help="the hash string to be cracked")
 PARSE.add_argument("-t", "--type", help="the type of hash supplied. Supported options are {}".format(HASH_VALUES.keys()))
 PARSE.add_argument("-m", "--mode", choices=['auto','manual'], help="Choose worker discovery mode: auto | manual ")
-parser.add_argument("-n", "--num", type=int, nargs="?", help="number of instances to create")
+PARSE.add_argument("-n", "--num", type=int, help="number of instances to create")
 ARGS = PARSE.parse_args()
 
-number = args.num
+number = ARGS.num
 ec2 = boto3.resource('ec2')
 
 # This function scans a ip:port and returns whether or not the port is open.
@@ -324,7 +324,7 @@ else:
     HASHCODE = HASH_VALUES[ARGS.type.upper()]
 # Main logic
 
-if number > 0:
+if ARGS.num > 0:
     startup()
 else:
     pass
