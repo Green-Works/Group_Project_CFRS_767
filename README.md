@@ -180,7 +180,7 @@ scripts and the worker.service is meant for systems that use SystemD.
 
  
 
-**SystemD **
+**SystemD**
 
 To install worker.py as a service on SystemD systems use the following code:
 
