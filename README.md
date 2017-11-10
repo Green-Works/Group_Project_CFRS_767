@@ -122,9 +122,6 @@ startup scripts. The worker.init is meant for systems that use SysV startup
 scripts and the worker.service is meant for systems that use SystemD.
 
 **SystemD **
-
- 
-
 To install worker.py as a service on SystemD systems use the following code:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,7 +133,6 @@ sudo systemctl start worker.service
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **SysV**
-
 To install worker.py on SysV systems use the following code:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
