@@ -65,10 +65,16 @@ PARSE = argparse.ArgumentParser(description="Distributed dictionary attack on a 
 PARSE.add_argument("-s", "--string", help="the hash string to be cracked")
 PARSE.add_argument("-t", "--type", help="the type of hash supplied. Supported options are {}".format(HASH_VALUES.keys()))
 PARSE.add_argument("-m", "--mode", choices=['auto','manual'], help="Choose worker discovery mode: auto | manual ")
-PARSE.add_argument("-n", "--num", type=int, help="number of instances to create")
+PARSE.add_argument("-i", "--instances", type=int, help="number of additional instances to create")
 ARGS = PARSE.parse_args()
 
-number = ARGS.num
+if ARGS.instances:
+    optional = True
+    number = ARGS.instances
+else:
+    optional = False
+    number = 1
+    
 ec2 = boto3.resource('ec2')
 
 # This function scans a ip:port and returns whether or not the port is open.
@@ -296,17 +302,16 @@ def startup():
                     'SubnetId': 'subnet-13c5ea3f'
                 },
             ],
-           DryRun=False)
+           DryRun=optional) # If ARGS.instance is True, instances will be created
     except ClientError as e:
         print(e)
 
-    print("Waiting for nodes to fully boot up...")
+    print("Waiting for additional instances to fully boot up...")
     for instance in instances:
          instance.wait_until_running()
          instance.reload()
+         time.sleep(10)
          print((instance.id, instance.state, instance.public_ip_address))
-
-# startup()
 
 # Display input arguments
 logging.info("String is: {}".format(ARGS.string))
@@ -324,10 +329,7 @@ else:
     HASHCODE = HASH_VALUES[ARGS.type.upper()]
 # Main logic
 
-if ARGS.num > 0:
-    startup()
-else:
-    pass
+startup()
 
 #populate the list of available workers
 WORKER_LIST = worker_discover(PORT, ARGS.mode)
