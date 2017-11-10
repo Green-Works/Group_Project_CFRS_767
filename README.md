@@ -227,8 +227,6 @@ ignored and the job_manager will auto discover workers present on the network.
 Use this option if you are unsure or do not know the IP addresses of systems
 with the worker.py script installed and running.
 
- 
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ./job_manager.py --string 5f4dcc3b5aa765d61d8327deb882cf99 --type md5 --mode manual
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
