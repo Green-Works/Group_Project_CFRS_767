@@ -235,6 +235,7 @@ The example above shows an alternate way of running the first scenario.
 
 ToDo:
 -----
-1. Error check hash input vs. type
+1. bcrypt and wpa aren't working currently
+2. Error check hash input vs. type
 
  
