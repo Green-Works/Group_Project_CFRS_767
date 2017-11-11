@@ -235,8 +235,6 @@ The example above shows an alternate way of running the first scenario.
 
 ToDo:
 -----
-1. get it to work outside AWS
-2. fix bcrypt input - b-bash error
-3. Error check hash input vs. type
+1. Error check hash input vs. type
 
  
