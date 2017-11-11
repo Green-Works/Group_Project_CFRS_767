@@ -42,6 +42,7 @@ import re
 import logging
 import os
 import subprocess
+import urllib.parse
 
 #Set Logging
 #logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
@@ -90,10 +91,10 @@ def run_hashcat(inputHash, hashTypeNumber, WNUM, TOTAL_WORKERS):
     m = "{0} {1}".format("-m", hashTypeNumber)
     o = "{0} {1}".format("-o", PASSWORD_PATH)
     f = "{0}".format('--outfile-format=2')
-    logging.debug('The string passed is: {0} -a {1} {2} {3} {4} {5} {6} {7} --show'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH_2))
+    logging.debug('The string passed is: {0} -a {1} {2} {3} {4} {5} \'{6}\' {7} --show'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH_2))
 
     #First the program checks the potfile to see if the password has been cracked by running with the --show option
-    potFileCheck = subprocess.run('{0} -a {1} {2} {3} {4} {5} {6} {7} --show'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH_2), stderr=subprocess.PIPE, shell=True)
+    potFileCheck = subprocess.run('{0} -a {1} {2} {3} {4} {5} \'{6}\' {7} --show'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH_2), stderr=subprocess.PIPE, shell=True)
     print(potFileCheck.stdout)
 
     #It then checks the pass.txt file that was created.
@@ -104,9 +105,9 @@ def run_hashcat(inputHash, hashTypeNumber, WNUM, TOTAL_WORKERS):
     #If pass.txt empty it runs hashcat.
     if PWD == "":
         logging.debug('Password not found in potfile. Attempting to crack it...')
-        result = subprocess.run('{0} -a {1} {2} {3} {4} {5} {6} {7}'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH_2), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        result = subprocess.run('{0} -a {1} {2} {3} {4} {5} \'{6}\' {7}'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH_2), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         print(result.stdout)
-        logging.debug('The string passed was: {0} -a {1} {2} {3} {4} {5} {6} {7}'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH_2))
+        logging.debug('The string passed was: {0} -a {1} {2} {3} {4} {5} \'{6}\' {7}'.format(HASHCAT, attackType, m, o, f, '--force', inputHash, DICTIONARY_PATH_2))
 
         #Once hashcat is done, it rechecks pass.txt to see if hashcat found a password
         recheck = open(PASSWORD_PATH, 'r')
@@ -158,12 +159,13 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
 
             #The section below parses the POST request for the required variables.
             HASH = re.search('(?<=hash\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
+            HASH2 = urllib.parse.unquote(HASH)
             TYPE = re.search('(?<=type\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
             WNUM = re.search('(?<=wnum\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
             TOTAL_WORKERS = re.search('(?<=totalw\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
 
             #start the hashcat process and track the process ID
-            HASHCAT_PID = run_hashcat(HASH, TYPE, WNUM, TOTAL_WORKERS)
+            HASHCAT_PID = run_hashcat(HASH2, TYPE, WNUM, TOTAL_WORKERS)
             logging.info("Hashcat started on worker {}. Process ID {}".format(WNUM, HASHCAT_PID))
             self._set_response()
 
