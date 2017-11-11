@@ -56,12 +56,12 @@ PORT = 24998
 MANUAL_WORKER_LIST = ['127.0.0.1']
 
 # Set Logging
-#logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
-logging.basicConfig(level=logging.INFO, format=' %(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.INFO, format=' %(asctime)s - %(levelname)s - %(message)s')
 
 # Parse inputs
 PARSE = argparse.ArgumentParser(description="Distributed dictionary attack on a hash!")
-PARSE.add_argument("-s", "--string", help="the hash string to be cracked")
+PARSE.add_argument("-s", "--string", type=str, help="the hash string to be cracked")
 PARSE.add_argument("-t", "--type", help="the type of hash supplied. Supported options are {}".format(HASH_VALUES.keys()))
 PARSE.add_argument("-m", "--mode", choices=['auto','manual'], help="Choose worker discovery mode: auto | manual ")
 PARSE.add_argument("-i", "--instances", type=int, help="number of additional instances to create")
@@ -70,11 +70,10 @@ ARGS = PARSE.parse_args()
 if ARGS.instances:
     optional = False
     number = ARGS.instances
+    ec2 = boto3.resource('ec2')
 else:
     optional = True
-    number = 1
-    
-ec2 = boto3.resource('ec2')
+    number = 0
 
 # This function scans a ip:port and returns whether or not the port is open.
 # credit to https://gist.github.com/gkbrk/99442e1294a6c83368f5#file-scanner-py-L46 for this function
@@ -328,8 +327,10 @@ else:
     logging.debug("Hash code is: {}".format(HASH_VALUES[ARGS.type.upper()]))
     HASHCODE = HASH_VALUES[ARGS.type.upper()]
 # Main logic
-
-startup()
+if number == 0:
+    logging.debug("skipping AWS stuff")
+else:
+    startup()
 
 #populate the list of available workers
 WORKER_LIST = worker_discover(PORT, ARGS.mode)
@@ -337,7 +338,7 @@ logging.debug("The workers found are {}".format(WORKER_LIST))
 # Check the dictionary file and split the dictionary if it hasn't already been done
 prev_dictionary_test(len(WORKER_LIST), DICTIONARY)
 # Send work to each worker
-send_work(WORKER_LIST, ARGS.string, HASHCODE, PORT)
+send_work(WORKER_LIST, str(ARGS.string), HASHCODE, PORT)
 
 #Continuously check the workers every five seconds for their status. The worker_status function will shut down
 #the workers when it finishes
