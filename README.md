@@ -70,7 +70,7 @@ This script is the user interface for this framework. In order to get started, a
 user must supply the job_manager.py script with a few arguments as input:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--s / --string - The hash string
+-s / --string - The hash string in quotes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,7 +210,7 @@ Example uses
 **Cracking an MD5 password**
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-./job_manager.py -s 5f4dcc3b5aa765d61d8327deb882cf99 -t md5 -m manual
+./job_manager.py -s '5f4dcc3b5aa765d61d8327deb882cf99' -t md5 -m manual
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The command above will employ the job_manager and worker scripts to crack an md5
@@ -218,7 +218,7 @@ password. In this scenario the job_manager.py script will only use workers
 identified in the “MANUAL_WORKER_LIST” variable.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-./job_manager.py -s 5f4dcc3b5aa765d61d8327deb882cf99 -t md5 -m auto
+./job_manager.py -s '5f4dcc3b5aa765d61d8327deb882cf99' -t md5 -m auto
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The command above will attempt to crack an md5 password using the automatic
@@ -228,7 +228,7 @@ Use this option if you are unsure or do not know the IP addresses of systems
 with the worker.py script installed and running.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-./job_manager.py --string 5f4dcc3b5aa765d61d8327deb882cf99 --type md5 --mode manual
+./job_manager.py --string '5f4dcc3b5aa765d61d8327deb882cf99' --type md5 --mode manual
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The example above shows an alternate way of running the first scenario.
