@@ -61,7 +61,7 @@ logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - 
 
 # Parse inputs
 PARSE = argparse.ArgumentParser(description="Distributed dictionary attack on a hash!")
-PARSE.add_argument("-s", "--string", type=str, help="the hash string to be cracked")
+PARSE.add_argument("-s", "--string", type=str, help="the hash string to be cracked in single 'quotes'")
 PARSE.add_argument("-t", "--type", help="the type of hash supplied. Supported options are {}".format(HASH_VALUES.keys()))
 PARSE.add_argument("-m", "--mode", choices=['auto','manual'], help="Choose worker discovery mode: auto | manual ")
 PARSE.add_argument("-i", "--instances", type=int, help="number of additional instances to create")
