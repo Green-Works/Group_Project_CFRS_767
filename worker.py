@@ -1,8 +1,39 @@
 #!/usr/bin/python3
 '''
-This is the framework for the worker script
-
-The communication piece for the job manager is done. The functions between the comment lines need to be written
+############################################################################
+#
+#   CFRS-767 Group Project - worker.py
+#        - MC
+#        - BD
+#        - TM
+#        - AM
+#
+###########################################################################
+#
+#   LANGUAGE: Python 3
+#   PYTHON VERSION: 3.5 (tested)
+#   MODULES REQUIRED:
+#       - re
+#       - logging
+#       - http.server
+#       - subprocess
+#       - os
+#   SCRIPT VER: 1.0
+#   REQURIED FILES:
+#       - dictionary file. This will be in form 'XofY.txt' from job_manager.py
+#   TODO:
+#
+#
+###########################################################################
+#
+# DESCRIPTION:
+#       This script is the worker for a distributed processing
+#        engine to crack passwords with hashcat. This script runs as a
+#        service that listens for commands from the job_manager.py script
+#        then starts an instance of hashcat with data sent form the job
+#        manager.
+#
+###########################################################################
 '''
 
 #Import modules
@@ -11,21 +42,19 @@ import re
 import logging
 import os
 import subprocess
-import codecs
 
 #Set Logging
-logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
-# Comment out the line below to enable logging to the terminal
-# logging.disable(logging.CRITICAL)
+#logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format=' %(asctime)s - %(levelname)s - %(message)s')
 
-#Set Config Variables
+#Set user Config Variables
 PORT = 24998
 DICTIONARY_PATH = "/tmp/"
-HOSTNAME = ""
-STATUS = "Waiting for work"
 HASHCAT = "/usr/bin/hashcat"
 
-############################################################################################################
+#Non-User Config Variables (don't change these)
+HOSTNAME = ""
+STATUS = "Waiting for work"
 
 #This function kills the hashcat process
 def state_reset(RESET_MSG):
@@ -35,10 +64,8 @@ def state_reset(RESET_MSG):
         logging.info("Status reset")
         msg = 0
     else:
-        logging.info("error changing status")
+        logging.error("Error changing status")
         msg = 1
-    #msg = 1 #1 for failure to kill hashcat
-    #msg = 0 #0 for success killing hashcat
     return(msg)
 
 #This function runs hashcat
@@ -46,11 +73,10 @@ def run_hashcat(inputHash, hashTypeNumber, WNUM, TOTAL_WORKERS):
     logging.debug("starting hashcat")
     DICTIONARY_FILE = str(WNUM) + "of" + str(TOTAL_WORKERS) + ".txt"
     DICTIONARY_PATH_2 = str(DICTIONARY_PATH) + str(DICTIONARY_FILE)
-        #Set this to where ever we want the password file to be on the AWS instance.  This variable must stay local for this to work
+        #Where the password file is on the AWS instance. This variable must stay local.
     PASSWORD_PATH = "/tmp/pass.txt"
     global STATUS
     attackType = 0
-
     STATUS = 'working'
 
     #check for a previous version of the temp file pass.txt. if it exists, deletes it
@@ -58,7 +84,7 @@ def run_hashcat(inputHash, hashTypeNumber, WNUM, TOTAL_WORKERS):
         logging.debug('Removing previous version of pass.txt file...')
         os.unlink(PASSWORD_PATH)
 
-    logging.info('Building string to pass to command shell...')
+    logging.debug('Building string to pass to command shell...')
 
     m = "{0} {1}".format("-m", hashTypeNumber)
     o = "{0} {1}".format("-o", PASSWORD_PATH)
@@ -87,19 +113,17 @@ def run_hashcat(inputHash, hashTypeNumber, WNUM, TOTAL_WORKERS):
         recheck.close()
         #If pass.txt is empty, hashcat did not find a password
         if PWD2 == "":
-            STATUS = 'unsuccessful. Password not found'
-            print(STATUS)
+            STATUS = 'Unsuccessful. Password not found'
+            logging.info("{}".format(STATUS))
             time.sleep(5)
         #If there is an entry, the program gets the password from the pass.txt file
         else:
             STATUS = 'Work done. Password is: {0}'.format(PWD2)
-            #print(STATUS)
+            logging.info("{}".format(STATUS))
     #If the password is in the potfile, the program gets it from pass.txt
     else:
-        logging.debug('Password cracked: ' + PWD)
         STATUS = 'Work done. Password is: {0}'.format(PWD)
-        print(STATUS)
-############################################################################################################
+        logging.info("{}".format(STATUS))
 
 #Configure the WORKER_SERVICE_OPTIONS
 class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
@@ -109,7 +133,6 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_HEAD(self):
-        #self.send_response(200)
         self.wfile.write(bytes("worker", "utf-8"))
     def do_GET(self):
         if self.path == "/status":
@@ -120,13 +143,13 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
             self.wfile.write(bytes("Unrecognized request: {}".format(self.path), "utf-8"))
             self.send_response(201)
 
-    '''
-    The Job manager sends the hash, type of hash, worker number, and total amount of workers to each worker
-    to start processing. The code below parses that information using regular expressions
-    '''
+            '''
+            The Job manager sends the hash, type of hash, worker number, and total amount of workers to each worker
+            to start processing. The code below parses that information using regular expressions
+            '''
     def do_POST(self):
         if self.path == "/start":
-            logging.debug("incomming http: {}".format(self.path))
+            logging.info("incoming http: {}".format(self.path))
             # This saves the POST request to a string called "post_data"
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -145,7 +168,7 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
 
         #Stop commands are also sent via POST
         elif self.path == "/stop":
-            logging.debug("incoming http: {}".format(self.path))
+            logging.info("incoming http: {}".format(self.path))
             #This saves the POST request to a string called "post_data"
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -153,7 +176,7 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
             #This is the call to kill the hashcat process. The job manager will send a GET /stop request
             # to tell the worker to stop processing because another worker was successful
             STATE = state_reset(post_data)
-            logging.debug("Worker Reset. New state is: {}".format(STATE))
+            logging.info("Worker Reset. New state is: {}".format(STATE))
             self._set_response()
 
         else:
@@ -161,7 +184,6 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'text/html')
             self.end_headers()
             logging.error("Bad Post Request")
-            # client.close()
 
 #Set the worker service name and options
 WORKER_SERVICE = HTTPServer((HOSTNAME, PORT), WORKER_SERVICE_OPTIONS)
