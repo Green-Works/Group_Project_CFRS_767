@@ -235,5 +235,7 @@ The example above shows an alternate way of running the first scenario.
 
 ToDo:
 -----
+1. fix bcrypt input - b-bash error
+2. Error check hash input vs. type
 
  
