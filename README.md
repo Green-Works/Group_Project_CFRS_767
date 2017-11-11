@@ -238,5 +238,6 @@ ToDo:
 1. bcrypt and wpa aren't working currently
 2. Error check hash input vs. type
 3. update readme.md with AWS stuff
+4. write a testing script
 
  
