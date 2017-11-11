@@ -69,10 +69,10 @@ PARSE.add_argument("-i", "--instances", type=int, help="number of additional ins
 ARGS = PARSE.parse_args()
 
 if ARGS.instances:
-    optional = True
+    optional = False
     number = ARGS.instances
 else:
-    optional = False
+    optional = True
     number = 1
     
 ec2 = boto3.resource('ec2')
