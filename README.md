@@ -239,5 +239,6 @@ ToDo:
 2. Error check hash input vs. type
 3. update readme.md with AWS stuff
 4. write a testing script
+5. high level visio diagrams for worker, job_manager and complete system. 
 
  
