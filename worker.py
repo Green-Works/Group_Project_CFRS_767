@@ -71,6 +71,7 @@ def state_reset(RESET_MSG):
 #This function runs hashcat
 def run_hashcat(inputHash, hashTypeNumber, WNUM, TOTAL_WORKERS):
     logging.debug("starting hashcat")
+    logging.debug("Hash is {}".format(inputHash))
     DICTIONARY_FILE = str(WNUM) + "of" + str(TOTAL_WORKERS) + ".txt"
     DICTIONARY_PATH_2 = str(DICTIONARY_PATH) + str(DICTIONARY_FILE)
         #Where the password file is on the AWS instance. This variable must stay local.
