@@ -247,7 +247,7 @@ def worker_status(WORKER_LIST, PORT):
                 logging.info("Worker {} completed and did not find the password".format(url))
                 WORKER_LIST.remove(X)
             elif "done" in str(r.content):
-                logging.info("FOUND: {}".format(str(r.content.decode("utf-8"))))
+                logging.info("FOUND: {} by worker {}".format(str(r.content.decode("utf-8")), X))
                 worker_stop(WORKER_LIST, PORT)
                 exit(0)
             elif "error" in str(r.content):
