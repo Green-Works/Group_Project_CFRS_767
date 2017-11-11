@@ -303,7 +303,7 @@ def startup():
             ],
            DryRun=optional) # If ARGS.instance is True, instances will be created
     except ClientError as e:
-        logging.error(e)
+        logging.debug(e)
 
     logging.debug("Waiting for additional instances to fully boot up...")
     if optional == False:
