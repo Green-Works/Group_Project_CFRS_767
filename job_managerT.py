@@ -307,11 +307,12 @@ def startup():
         print(e)
 
     print("Waiting for additional instances to fully boot up...")
-    for instance in instances:
-         instance.wait_until_running()
-         instance.reload()
-         time.sleep(10)
-         print((instance.id, instance.state, instance.public_ip_address))
+    if optional == False:
+        for instance in instances:
+             instance.wait_until_running()
+             instance.reload()
+             time.sleep(10)
+             print((instance.id, instance.state, instance.public_ip_address))
 
 # Display input arguments
 logging.info("String is: {}".format(ARGS.string))
