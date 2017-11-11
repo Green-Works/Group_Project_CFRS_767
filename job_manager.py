@@ -21,7 +21,7 @@
 #       - requests
 #       - time
 #       - os
-#   SCRIPT VER: 1.0a
+#   SCRIPT VER: 1.0
 #   REQURIED FILES:
 #       - dictionary file. Set config variable "DICTIONARY" down below.
 #   TODO:
@@ -46,7 +46,8 @@ import socket
 import requests
 import time
 import os
-
+import boto3
+from botocore.exceptions import ClientError
 
 #Set config variables
 DICTIONARY = "/tmp/rockyou.txt"
@@ -55,16 +56,25 @@ PORT = 24998
 MANUAL_WORKER_LIST = ['127.0.0.1']
 
 # Set Logging
-logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
-# Comment out the line below to enable logging to the terminal
-# logging.disable(logging.CRITICAL)
+#logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format=' %(asctime)s - %(levelname)s - %(message)s')
 
 # Parse inputs
 PARSE = argparse.ArgumentParser(description="Distributed dictionary attack on a hash!")
 PARSE.add_argument("-s", "--string", help="the hash string to be cracked")
 PARSE.add_argument("-t", "--type", help="the type of hash supplied. Supported options are {}".format(HASH_VALUES.keys()))
 PARSE.add_argument("-m", "--mode", choices=['auto','manual'], help="Choose worker discovery mode: auto | manual ")
+PARSE.add_argument("-i", "--instances", type=int, help="number of additional instances to create")
 ARGS = PARSE.parse_args()
+
+if ARGS.instances:
+    optional = False
+    number = ARGS.instances
+else:
+    optional = True
+    number = 1
+    
+ec2 = boto3.resource('ec2')
 
 # This function scans a ip:port and returns whether or not the port is open.
 # credit to https://gist.github.com/gkbrk/99442e1294a6c83368f5#file-scanner-py-L46 for this function
@@ -90,10 +100,10 @@ def worker_discover(PORT, MODE):
                 logging.error("ERROR: Worker {} is not up. Please start worker on this host or disable this IP. Exiting.".format(X))
                 exit(1)
             else:
-                logging.info("All workers present and accounted for. Using these workers {}".format(MANUAL_WORKER_LIST))
+                logging.info("All workers up. Using these workers {}".format(MANUAL_WORKER_LIST))
                 WORKER_LIST = MANUAL_WORKER_LIST
     elif MODE == "auto":
-        logging.debug("Searching for workers on local network using tcp port {}".format(PORT))
+        logging.info("Searching for workers on local network using tcp port {}".format(PORT))
         for X in netifaces.interfaces():
             INTERFACE_DATA = netifaces.ifaddresses(X).get(netifaces.AF_INET)
             IP = INTERFACE_DATA[0]['addr']
@@ -122,7 +132,7 @@ def worker_discover(PORT, MODE):
                         if is_open is True:
                             WORKER_LIST.extend([str(Y)])
                             logging.debug("port {} open on IP {}".format(PORT, str(Y)))
-            logging.debug("Workers found: {}".format(WORKER_LIST))
+            logging.info("Workers found: {}".format(WORKER_LIST))
     else:
         logging.error("Unknown mode {}".format(MODE))
     return(WORKER_LIST)
@@ -186,14 +196,13 @@ def prev_dictionary_test(NODES, DICTIONARY):
     # if the count of files matches the number of nodes  all the correct dictionaries are in place
     # else, clean up the dictionary folder and create new split dictionaries
     if count == NODES:
-        logging.info("All split dictionaries are present.")
+        logging.debug("All split dictionaries are present.")
         return()
     else:
         dictionary_splitter(NODES, DICTIONARY)
 
 # This is the part of the script that sends a POST/GET message to the workers with the hash and type
 def send_work(WORKER_LIST, HASH, TYPE, PORT):
-    logging.info("sending work...")
     TOTAL_WORKERS = len(WORKER_LIST)
     i = 1
     for x in WORKER_LIST:
@@ -205,7 +214,8 @@ def send_work(WORKER_LIST, HASH, TYPE, PORT):
             r = requests.post(start, data=payload)
             logging.info("http://{}:{} --- POST: hash: {} type: {} Portion: {}/{}".format(x, PORT, HASH, TYPE, i, TOTAL_WORKERS))
         except requests.exceptions.RequestException:
-            logging.info("encountered an error")
+            #ToDo: this is generating an error.
+            logging.debug("encountered a error sending work to {}".format(x))
         i += 1
 
 #This should send a 'stop' post to the remaining workers when one worker cracks a hash
@@ -219,25 +229,25 @@ def worker_stop(WORKER_LIST, PORT):
             r = requests.post(stop, data=payload)
             logging.debug(r.status_code)
         except requests.exceptions.RequestException:
-            logging.info("encountered an error stopping worker {}".format(url))
+            logging.error("Encountered an error stopping worker {}".format(url))
 
 #This function checks the status of the workers. This keys in on 4 possible states: 'working', 'ready', 'unsuccessful',
 #and 'done'.
 def worker_status(WORKER_LIST, PORT):
     for X in WORKER_LIST:
         url = "http://" + str(X) + ":" + str(PORT)
-        logging.info("Checking status of worker: {}".format(url))
+        logging.debug("Checking status of worker: {}".format(url))
         try:
             r = requests.get(url + "/status")
             if "working" in str(r.content):
-                logging.info("Worker {} is working".format(url))
+                logging.debug("Worker {} is working".format(url))
             elif "ready" in str(r.content):
-                logging.info("Worker {} is ready for work".format(url))
+                logging.debug("Worker {} is ready for work".format(url))
             elif "unsuccessful" in str(r.content):
-                print("Worker {} completed and did not find the password".format(url))
+                logging.info("Worker {} completed and did not find the password".format(url))
                 WORKER_LIST.remove(X)
             elif "done" in str(r.content):
-                print("FOUND: {}".format(str(r.content.decode("utf-8"))))
+                logging.info("FOUND: {}".format(str(r.content.decode("utf-8"))))
                 worker_stop(WORKER_LIST, PORT)
                 exit(0)
             elif "error" in str(r.content):
@@ -247,6 +257,61 @@ def worker_status(WORKER_LIST, PORT):
         except requests.exceptions.RequestException:
             logging.error("There was an error contacting worker {}".format(url))
         return(WORKER_LIST)
+
+def startup():
+    try:
+        ec2.create_instances(
+            ImageId='ami-120fbb68', # Kali Linux AMI with necessary GPU drivers and EFS automounted
+            InstanceType='t2.micro', # can be replaced with GPU based EC2 instance type id
+            MinCount=number, # minimum number of instances to create
+            MaxCount=number, # maximum number of instances to create
+            KeyName='key', # key used to SSH into instance(s)
+            NetworkInterfaces=[
+                {
+                    'AssociatePublicIpAddress': True, # auto assigns public IPv4 address
+                    'DeleteOnTermination': True, 
+                    'DeviceIndex': 0,
+                    'Groups': [
+                        'sg-a57188d6',
+                        'sg-d217eea1' # Security Group(s) to assign to instance(s)
+                    ],
+                    'SubnetId': 'subnet-13c5ea3f' # subnet where instance is located
+                },
+            ],
+            DryRun=True) # Dry Run, verifies command will run successfully without creating instance
+    except ClientError as e:
+        if 'DryRunOperation' not in str(e):
+            raise
+    try:
+        instances = ec2.create_instances(
+            ImageId='ami-120fbb68',
+            InstanceType='t2.micro',
+            MinCount=number,
+            MaxCount=number,
+            KeyName='key',
+            NetworkInterfaces=[
+                {
+                    'AssociatePublicIpAddress': True,
+                    'DeleteOnTermination': True, 
+                    'DeviceIndex': 0,
+                    'Groups': [
+                        'sg-a57188d6',
+                        'sg-d217eea1'
+                    ],
+                    'SubnetId': 'subnet-13c5ea3f'
+                },
+            ],
+           DryRun=optional) # If ARGS.instance is True, instances will be created
+    except ClientError as e:
+        logging.error(e)
+
+    logging.debug("Waiting for additional instances to fully boot up...")
+    if optional == False:
+        for instance in instances:
+             instance.wait_until_running()
+             instance.reload()
+             logging.debug((instance.id, instance.state, instance.public_ip_address))
+        time.sleep(45)
 
 # Display input arguments
 logging.info("String is: {}".format(ARGS.string))
@@ -260,13 +325,15 @@ if ARGS.type.upper() not in HASH_VALUES:
     logging.error("ERROR. Hash type not in available values\n Please only use these values {}".format(HASH_VALUES.keys()))
     exit(1)
 else:
-    logging.info("Hash code is: {}".format(HASH_VALUES[ARGS.type.upper()]))
+    logging.debug("Hash code is: {}".format(HASH_VALUES[ARGS.type.upper()]))
     HASHCODE = HASH_VALUES[ARGS.type.upper()]
 # Main logic
 
+startup()
+
 #populate the list of available workers
 WORKER_LIST = worker_discover(PORT, ARGS.mode)
-logging.info("The workers found are {}".format(WORKER_LIST))
+logging.debug("The workers found are {}".format(WORKER_LIST))
 # Check the dictionary file and split the dictionary if it hasn't already been done
 prev_dictionary_test(len(WORKER_LIST), DICTIONARY)
 # Send work to each worker
