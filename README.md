@@ -10,8 +10,8 @@ be run on an Amazon Web Services (AWS) platform as the job_manager.py script
 contains options to start multiple systems for additional cracking power.
 
 The script framework is coded in Python 3 and has been extensively tested within
-Kali Linux on an AWS platform. Usage outside of AWS is completely possible with
-some minor modification.
+Kali Linux on an AWS platform. The script works inside or outside AWS, however,
+the ‘-i’ feature will only work within AWS.
 
  
 
@@ -36,7 +36,7 @@ The job_manager.py script requires the following modules:
 
 The worker.py script requires the following modules:
 
--   re, logging, os, subprocess, codecs, HTTPServer
+-   re, logging, os, subprocess, HTTPServer
 
  
 
@@ -50,7 +50,9 @@ Essentially, the job manager is designed to perform the following steps:
 2.  Split the dictionary into smaller files for each worker (e.g. 1of1.txt,
     1of2.txt, 2of2.txt, and so on).
 
-3.  Send, via HTTP, to each worker the following information:
+3.  Spin up cloned instances of itself within the AWS framework
+
+4.  Send, via HTTP, to each worker the following information:
 
     1.  The hash
 
@@ -60,9 +62,9 @@ Essentially, the job manager is designed to perform the following steps:
 
     4.  The total number of workers (i.e. 4, 5, 6, etc.)
 
-4.  Check the work status of each worker
+5.  Check the work status of each worker
 
-5.  Present the user with the results from each worker
+6.  Present the user with the results from each worker
 
 ### Usage
 
@@ -91,7 +93,15 @@ user must supply the job_manager.py script with a few arguments as input:
 
     -   The options for “mode” are either “auto” or “manual”
 
-     
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-i / --instances - number of addtional instances to create
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-   This will start *additional* cloned AWS instances. For instantce, -i 3 will
+    start 3 *additional* instances bringing the total to 4 AWS instances.
+    Currently, there is no feature to match the number of instances to the
+    number of hosts present on the network. This option is best used with the
+    “-m auto” mode.
 
 ### Job_manager.py Configuration
 
@@ -233,12 +243,24 @@ with the worker.py script installed and running.
 
 The example above shows an alternate way of running the first scenario.
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./job_manager.py -s '5f4dcc3b5aa765d61d8327deb882cf99' -t md5 -m auto -i 2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The above command will start the process and add 2 additional AWS instances for
+extra processing power.
+
 ToDo:
 -----
-1. bcrypt and wpa aren't working currently
-2. Error check hash input vs. type
-3. update readme.md with AWS stuff
-4. write a testing script
-5. high level visio diagrams for worker, job_manager and complete system. 
+
+1.  bcrypt and wpa aren't working currently
+
+2.  Error check hash input vs. type
+
+3.  update readme.md with AWS stuff
+
+4.  write a testing script
+
+5.  high level visio diagrams for worker, job_manager and complete system.
 
  
