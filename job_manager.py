@@ -256,7 +256,7 @@ def worker_status(WORKER_LIST, PORT):
                 logging.error("Status of worker {} unknown".format(url))
         except requests.exceptions.RequestException:
             logging.error("There was an error contacting worker {}".format(url))
-        return(WORKER_LIST)
+    return(WORKER_LIST)
 
 def startup():
     try:
