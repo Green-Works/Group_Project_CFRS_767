@@ -38,6 +38,7 @@
 
 #Import modules
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
 import re
 import base64
 import logging
@@ -108,7 +109,7 @@ def run_hashcat(inputHash, hashTypeNumber, WNUM, TOTAL_WORKERS):
     if PWD == "":
         logging.debug('Password not found in potfile. Attempting to crack it...')
         result = subprocess.run('{0} -a {1} {2} {3} {4} \'{5}\' {6}'.format(HASHCAT, attackType, m, o, f, inputHash, DICTIONARY_PATH_2), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        print(result.stdout)
+        logging.debug(result.stdout)
         logging.debug('The string passed was: {0} -a {1} {2} {3} {4} \'{5}\' {6}'.format(HASHCAT, attackType, m, o, f, inputHash, DICTIONARY_PATH_2))
 
         #Once hashcat is done, it rechecks pass.txt to see if hashcat found a password
@@ -170,9 +171,11 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
             WNUM = re.search('(?<=wnum\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
             TOTAL_WORKERS = re.search('(?<=totalw\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
 
-            #start the hashcat process and track the process ID
-            HASHCAT_PID = run_hashcat(HASH4, TYPE, WNUM, TOTAL_WORKERS)
-            logging.info("Hashcat started on worker {}. Process ID {}".format(WNUM, HASHCAT_PID))
+            #start the hashcat process as a seperate thread
+            #run_hashcat(HASH4, TYPE, WNUM, TOTAL_WORKERS)
+            T = Thread(target=run_hashcat, args=(HASH4, TYPE, WNUM, TOTAL_WORKERS))
+            T.start()
+            logging.info("Hashcat started on worker {} of {}".format(WNUM, TOTAL_WORKERS))
             self._set_response()
 
         #Stop commands are also sent via POST
