@@ -163,13 +163,14 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
             HASH = re.search('(?<=hash\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
             HASH2 = urllib.parse.unquote(HASH)
             HASH3 = base64.b64decode(HASH2)
+            HASH4 = HASH3.decode("utf-8")
             logging.debug("The base64 decoded hash is: {}".format(HASH3))
             TYPE = re.search('(?<=type\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
             WNUM = re.search('(?<=wnum\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
             TOTAL_WORKERS = re.search('(?<=totalw\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
 
             #start the hashcat process and track the process ID
-            HASHCAT_PID = run_hashcat(HASH3, TYPE, WNUM, TOTAL_WORKERS)
+            HASHCAT_PID = run_hashcat(HASH4, TYPE, WNUM, TOTAL_WORKERS)
             logging.info("Hashcat started on worker {}. Process ID {}".format(WNUM, HASHCAT_PID))
             self._set_response()
 
