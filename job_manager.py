@@ -243,7 +243,7 @@ def worker_status(WORKER_LIST, PORT):
                 logging.debug("Worker {} is working".format(url))
             elif "ready" in str(r.content):
                 logging.debug("Worker {} is ready for work".format(url))
-            elif "unsuccessful" in str(r.content):
+            elif "Unsuccessful" in str(r.content):
                 logging.info("Worker {} completed and did not find the password".format(url))
                 WORKER_LIST.remove(X)
             elif "done" in str(r.content):
