@@ -52,7 +52,7 @@ logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - 
 
 #Set user Config Variables
 PORT = 24998
-DICTIONARY_PATH = "/tmp/"
+DICTIONARY_PATH = "/home/ec2-user/efs/"
 HASHCAT = "/usr/bin/hashcat"
 
 #Non-User Config Variables (don't change these)
