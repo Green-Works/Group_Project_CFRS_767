@@ -39,6 +39,7 @@
 '''
 
 import argparse
+import base64
 import logging
 import netifaces
 import netaddr
@@ -337,8 +338,9 @@ WORKER_LIST = worker_discover(PORT, ARGS.mode)
 logging.debug("The workers found are {}".format(WORKER_LIST))
 # Check the dictionary file and split the dictionary if it hasn't already been done
 prev_dictionary_test(len(WORKER_LIST), DICTIONARY)
+HASH = base64.b64encode(ARGS.string.encode('utf-8'))
 # Send work to each worker
-send_work(WORKER_LIST, str(ARGS.string), HASHCODE, PORT)
+send_work(WORKER_LIST, HASH, HASHCODE, PORT)
 
 #Continuously check the workers every five seconds for their status. The worker_status function will shut down
 #the workers when it finishes
