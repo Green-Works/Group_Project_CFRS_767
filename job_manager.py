@@ -51,7 +51,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 #Set config variables
-DICTIONARY = "/tmp/rockyou.txt"
+DICTIONARY = "/home/ec2-user/efs/clean_rockyou.txt"
 HASH_VALUES = {'MD5': 0, 'MD5CRYPT': 500, 'SHA1': 100, 'SHA512UNIX':1800, 'NTLM': 1000, 'NTLM2': 5600, 'WPA': 2500, 'BCRYPT': 3200 }
 PORT = 24998
 MANUAL_WORKER_LIST = ['127.0.0.1']
