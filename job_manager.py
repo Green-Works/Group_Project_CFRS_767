@@ -261,8 +261,8 @@ def worker_status(WORKER_LIST, PORT):
 def startup():
     try:
         ec2.create_instances(
-            ImageId='ami-120fbb68', # Kali Linux AMI with necessary GPU drivers and EFS automounted
-            InstanceType='t2.micro', # can be replaced with GPU based EC2 instance type id
+            ImageId='ami-911d90eb', # Kali Linux AMI with necessary GPU drivers and EFS automounted
+            InstanceType='p2.xlarge', # can be replaced with GPU based EC2 instance type id
             MinCount=number, # minimum number of instances to create
             MaxCount=number, # maximum number of instances to create
             KeyName='key', # key used to SSH into instance(s)
@@ -275,7 +275,7 @@ def startup():
                         'sg-a57188d6',
                         'sg-d217eea1' # Security Group(s) to assign to instance(s)
                     ],
-                    'SubnetId': 'subnet-13c5ea3f' # subnet where instance is located
+                    'SubnetId': 'subnet-835ba0ac' # subnet where instance is located
                 },
             ],
             DryRun=True) # Dry Run, verifies command will run successfully without creating instance
@@ -284,8 +284,8 @@ def startup():
             raise
     try:
         instances = ec2.create_instances(
-            ImageId='ami-120fbb68',
-            InstanceType='t2.micro',
+            ImageId='ami-911d90eb',
+            InstanceType='p2.xlarge',
             MinCount=number,
             MaxCount=number,
             KeyName='key',
@@ -298,7 +298,7 @@ def startup():
                         'sg-a57188d6',
                         'sg-d217eea1'
                     ],
-                    'SubnetId': 'subnet-13c5ea3f'
+                    'SubnetId': 'subnet-835ba0ac'
                 },
             ],
            DryRun=optional) # If ARGS.instance is True, instances will be created
