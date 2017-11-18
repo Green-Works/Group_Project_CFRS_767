@@ -162,15 +162,13 @@ class WORKER_SERVICE_OPTIONS(BaseHTTPRequestHandler):
             #The section below parses the POST request for the required variables.
             HASH = re.search('(?<=hash\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
             HASH2 = urllib.parse.unquote(HASH)
-            HASH3 = base64.b64decode(HASH2)
-            HASH4 = HASH3.decode("utf-8")
-            logging.debug("The base64 decoded hash is: {}".format(HASH3))
+            logging.debug("The string passed to hashcat is: {}".format(HASH2))
             TYPE = re.search('(?<=type\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
             WNUM = re.search('(?<=wnum\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
             TOTAL_WORKERS = re.search('(?<=totalw\=)(.*?)(?=[\&|\'])', str(post_data)).group(1)
 
             #start the hashcat process and track the process ID
-            HASHCAT_PID = run_hashcat(HASH4, TYPE, WNUM, TOTAL_WORKERS)
+            HASHCAT_PID = run_hashcat(HASH2, TYPE, WNUM, TOTAL_WORKERS)
             logging.info("Hashcat started on worker {}. Process ID {}".format(WNUM, HASHCAT_PID))
             self._set_response()
 
