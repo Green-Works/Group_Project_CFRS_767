@@ -39,6 +39,7 @@
 #Import modules
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import re
+import base64
 import logging
 import os
 import time
