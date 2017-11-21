@@ -32,11 +32,11 @@ this does not happen, shared storage should be used.
 
 The job_manager.py script requires the following modules:
 
--   argparse, logging, netifaces, netaddr, socket, requests, time, os
+-   argparse, logging, netifaces, netaddr, socket, requests, time, os, boto3, botocore.exceptions
 
 The worker.py script requires the following modules:
 
--   re, logging, os, subprocess, HTTPServer
+-   re, logging, os, subprocess, HTTPServer, threading, urllib.parse
 
  
 
