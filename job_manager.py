@@ -261,7 +261,7 @@ def worker_status(WORKER_LIST, PORT):
 def startup():
     try:
         ec2.create_instances(
-            ImageId='ami-911d90eb', # Kali Linux AMI with necessary GPU drivers and EFS automounted
+            ImageId='ami-491e9133', # Kali Linux AMI with necessary GPU drivers and EFS automounted
             InstanceType='p2.xlarge', # can be replaced with GPU based EC2 instance type id
             MinCount=number, # minimum number of instances to create
             MaxCount=number, # maximum number of instances to create
@@ -284,7 +284,7 @@ def startup():
             raise
     try:
         instances = ec2.create_instances(
-            ImageId='ami-911d90eb',
+            ImageId='ami-491e9133',
             InstanceType='p2.xlarge',
             MinCount=number,
             MaxCount=number,
