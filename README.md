@@ -18,6 +18,11 @@ the ‘-i’ feature will only work within AWS.
 Prerequisites
 -------------
 
+**AWS Command Line Interface**
+
+For instructions on how to install and configure the AWS CLI please read Amazon’s documentation found here: https://docs.aws.amazon.com/cli/latest/userguide/awscli-install-linux.html
+The AWS CLI requires Access/Secret keys with IAM permissions to Start/Stop EC2 instance as well as all EC2 Describe actions in order to work with this program.
+
 **Shared Storage**
 
 To properly take advantage of this framework, shared storage for the dictionary
