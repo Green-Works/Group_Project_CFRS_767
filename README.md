@@ -20,8 +20,7 @@ Prerequisites
 
 **AWS Command Line Interface**
 
-For instructions on how to install and configure the AWS CLI please read Amazon’s documentation found here: https://docs.aws.amazon.com/cli/latest/userguide/awscli-install-linux.html
-The AWS CLI requires Access/Secret keys with IAM permissions to Start/Stop EC2 instance as well as all EC2 Describe actions in order to work with this program.
+Prior using the job manager and worker, the AWS Command Line interface (CLI) must be installed on the base image in order to support the creation of new GPU backed instances on the fly.  At a minimum Access and Secret keys must be supplied to the main image that allow for EC2 start/stop actions as well as all EC2 Describe actions.  For instructions on how to install and configure the AWS CLI please read Amazon’s documentation found here: https://docs.aws.amazon.com/cli/latest/userguide/awscli-install-linux.html 
 
 **Shared Storage**
 
