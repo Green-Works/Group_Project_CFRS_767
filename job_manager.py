@@ -261,21 +261,21 @@ def worker_status(WORKER_LIST, PORT):
 def startup():
     try:
         ec2.create_instances(
-            ImageId='ami-491e9133', # Kali Linux AMI with necessary GPU drivers and EFS automounted
-            InstanceType='p2.xlarge', # can be replaced with GPU based EC2 instance type id
+            ImageId='ami-', # Kali Linux AMI with necessary GPU drivers and EFS automounted
+            InstanceType='<INSTANCE TYPE>', # can be replaced with GPU based EC2 instance type id
             MinCount=number, # minimum number of instances to create
             MaxCount=number, # maximum number of instances to create
-            KeyName='key', # key used to SSH into instance(s)
+            KeyName='<KEY NAME>', # key used to SSH into instance(s)
             NetworkInterfaces=[
                 {
                     'AssociatePublicIpAddress': True, # auto assigns public IPv4 address
                     'DeleteOnTermination': True, 
                     'DeviceIndex': 0,
                     'Groups': [
-                        'sg-a57188d6',
-                        'sg-d217eea1' # Security Group(s) to assign to instance(s)
+                        'sg-',
+                        'sg-' # Security Group(s) to assign to instance(s)
                     ],
-                    'SubnetId': 'subnet-835ba0ac' # subnet where instance is located
+                    'SubnetId': 'subnet-' # subnet where instance is located
                 },
             ],
             DryRun=True) # Dry Run, verifies command will run successfully without creating instance
@@ -284,21 +284,21 @@ def startup():
             raise
     try:
         instances = ec2.create_instances(
-            ImageId='ami-491e9133',
-            InstanceType='p2.xlarge',
+            ImageId='ami-',
+            InstanceType='<INSTANCE TYPE>',
             MinCount=number,
             MaxCount=number,
-            KeyName='key',
+            KeyName='<KEY NAME>',
             NetworkInterfaces=[
                 {
                     'AssociatePublicIpAddress': True,
                     'DeleteOnTermination': True, 
                     'DeviceIndex': 0,
                     'Groups': [
-                        'sg-a57188d6',
-                        'sg-d217eea1'
+                        'sg-',
+                        'sg-'
                     ],
-                    'SubnetId': 'subnet-835ba0ac'
+                    'SubnetId': 'subnet-'
                 },
             ],
            DryRun=optional) # If ARGS.instance is True, instances will be created
