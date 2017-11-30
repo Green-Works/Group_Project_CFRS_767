@@ -21,7 +21,7 @@ Prerequisites
 **Shared Storage**
 
 To properly take advantage of this framework, shared storage for the dictionary
-file should be used. Ideally, a ECS share that contains the dictionary would be
+file should be used. Ideally, an AWS EFS share that contains the dictionary would be
 ideal. In this way the job_manager.py script can create dictionaries for the
 workers to use. All error checking on dictionaries is done by the job_manager.py
 so if an improper dictionary is supplied to the worker.py script or if the
