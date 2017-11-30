@@ -21,6 +21,7 @@
 #       - requests
 #       - time
 #       - os
+#       - boto3
 #   SCRIPT VER: 1.0
 #   REQURIED FILES:
 #       - dictionary file. Set config variable "DICTIONARY" down below.
